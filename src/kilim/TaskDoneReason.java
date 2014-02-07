@@ -7,10 +7,14 @@
 package kilim;
 
 public class TaskDoneReason implements PauseReason {
-    Object exitObj;
+    private final Object exitObj;
 
     TaskDoneReason(Object o) {
         exitObj = o;
+    }
+
+    public Object exitReason() {
+        return exitObj;
     }
 
     public boolean isValid(Task t) {
