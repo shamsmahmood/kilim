@@ -8,9 +8,7 @@ package kilim;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.LinkedList;
 import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -18,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * own stack in the form of a fiber). A concrete subclass of Task must
  * provide a pausable execute method.
  */
-public abstract class Task implements EventSubscriber {
+public abstract class Task {
     public volatile Thread currentThread = null;
 
     static PauseReason yieldReason = new YieldReason();
@@ -53,29 +51,9 @@ public abstract class Task implements EventSubscriber {
     protected boolean done = false;
 
     /**
-     * The thread in which to resume this task. Ideally, we shouldn't have any
-     * preferences, but using locks in pausable methods will require the task
-     * to be pinned to a thread.
      *
-     * @see kilim.ReentrantLock
-     */
-    volatile WorkerThread preferredResumeThread;
-
-    /**
-     * @see Task#preferredResumeThread
      */
     int numActivePins;
-
-    /**
-     * @see #informOnExit(Mailbox)
-     */
-    private LinkedList<Mailbox<ExitMsg>> exitMBs;
-
-    /**
-     * The object responsible for handing this task to a thread
-     * when the task is runnable.
-     */
-    protected Scheduler scheduler;
 
     public Object exitResult = "OK";
 
@@ -90,41 +68,6 @@ public abstract class Task implements EventSubscriber {
 
     public int id() {
         return id;
-    }
-
-    public synchronized Task setScheduler(Scheduler s) {
-//        if (running) {
-//            throw new AssertionError("Attempt to change task's scheduler while it is running");
-//        }
-        scheduler = s;
-        return this;
-    }
-
-    public synchronized Scheduler getScheduler() {
-        return scheduler;
-    }
-
-    public void resumeOnScheduler(Scheduler s) throws Pausable {
-        if (scheduler == s) {
-            return;
-        }
-        scheduler = s;
-        Task.yield();
-    }
-
-    /**
-     * Used to start the task; the task doesn't resume on its own. Custom
-     * schedulers must be set (@see #setScheduler(Scheduler)) before
-     * start() is called.
-     *
-     * @return
-     */
-    public Task start() {
-        if (scheduler == null) {
-            setScheduler(Scheduler.getDefaultScheduler());
-        }
-        resume();
-        return this;
     }
 
     /**
@@ -149,49 +92,6 @@ public abstract class Task implements EventSubscriber {
             }
         }
         throw new AssertionError("Expected task to be run by WorkerThread");
-    }
-
-    public void onEvent(EventPublisher ep, Event e) {
-        resume();
-    }
-
-    /**
-     * Add itself to scheduler if it is neither already running nor done.
-     *
-     * @return True if it scheduled itself.
-     */
-    public boolean resume() {
-        if (scheduler == null) {
-            return false;
-        }
-
-        boolean doSchedule = false;
-        // We don't check pauseReason while resuming (to verify whether
-        // it is worth returning to a pause state. The code at the top of stack 
-        // will be doing that anyway.
-        synchronized (this) {
-            if (done || running) {
-                return false;
-            }
-            running = doSchedule = true;
-        }
-        if (doSchedule) {
-            scheduler.schedule(this);
-        }
-        return doSchedule;
-    }
-
-    public void informOnExit(Mailbox<ExitMsg> exit) {
-        if (isDone()) {
-            exit.putnb(new ExitMsg(this, exitResult));
-            return;
-        }
-        synchronized (this) {
-            if (exitMBs == null) {
-                exitMBs = new LinkedList<Mailbox<ExitMsg>>();
-            }
-            exitMBs.add(exit);
-        }
     }
 
     /**
@@ -344,21 +244,6 @@ public abstract class Task implements EventSubscriber {
     }
 
     /**
-     * @param millis to sleep. Like thread.sleep, except it doesn't throw an interrupt, and it
-     *               doesn't hog the java thread.
-     */
-    public static void sleep(final long millis) throws Pausable {
-        // create a temp mailbox, and wait on it.
-        final Mailbox<Integer> sleepmb = new Mailbox<Integer>(1); // TODO: will need a better mechanism for monitoring later on.
-        timer.schedule(new TimerTask() {
-            public void run() {
-                sleepmb.putnb(0);
-            }
-        }, millis);
-        sleepmb.get(); // block until a message posted
-    }
-
-    /**
      * Yield cooperatively to the next task waiting to use the thread.
      */
     public static void yield() throws Pausable {
@@ -446,75 +331,6 @@ public abstract class Task implements EventSubscriber {
     }
 
     /**
-     * Called by WorkerThread, it is the wrapper that performs pre and post
-     * execute processing (in addition to calling the execute(fiber) method
-     * of the task.
-     */
-    public void _runExecute(WorkerThread thread) throws NotPausable {
-        Fiber f = fiber;
-        boolean isDone = false;
-        try {
-            currentThread = Thread.currentThread();
-            assert (preferredResumeThread == null || preferredResumeThread == thread) : "Resumed " + id + " in incorrect thread. ";
-            // start execute. fiber is wound to the beginning.
-            execute(f.begin());
-
-            // execute() done. Check fiber if it is pausing and reset it.
-            isDone = f.end() || (pauseReason instanceof TaskDoneReason);
-            assert (pauseReason == null && isDone) || (pauseReason != null && !isDone) : "pauseReason:" + pauseReason + ",isDone =" + isDone;
-        } catch (Throwable th) {
-            th.printStackTrace();
-            // Definitely done
-            setPauseReason(new TaskDoneReason(th));
-            isDone = true;
-        }
-
-        if (isDone) {
-            done = true;
-            // inform on exit
-            if (numActivePins > 0) {
-                throw new AssertionError("Task ended but has active locks");
-            }
-            if (exitMBs != null) {
-                if (pauseReason instanceof TaskDoneReason) {
-                    exitResult = ((TaskDoneReason) pauseReason).exitReason();
-                }
-                ExitMsg msg = new ExitMsg(this, exitResult);
-                for (Mailbox<ExitMsg> exitMB : exitMBs) {
-                    exitMB.putnb(msg);
-                }
-            }
-            preferredResumeThread = null;
-        } else {
-            if (thread != null) { // it is null for generators
-                if (numActivePins > 0) {
-                    preferredResumeThread = thread;
-                } else {
-                    assert numActivePins == 0 : "numActivePins == " + numActivePins;
-                    preferredResumeThread = null;
-                }
-            }
-
-            PauseReason pr = this.pauseReason;
-            synchronized (this) {
-                running = false;
-                currentThread = null;
-            }
-
-            // The task has been in "running" mode until now, and may have missed
-            // notifications to the pauseReason object (that is, it would have
-            // resisted calls to resume(). If the pauseReason is not valid any
-            // more, we'll resume. 
-            if (!pr.isValid(this)) {
-                // NOTE: At this point, another event could trigger resumption before the following resume() can kick in. Additionally,
-                // it is possible that the task could process all pending events, so the following call to resume() may be spurious.
-                // Cell/Mailbox's  get/put watch out for spurious resumptions.
-                resume();
-            }
-        }
-    }
-
-    /**
      * synchronously execute the current task
      *
      * @return true if Task completed execution without being paused
@@ -546,18 +362,6 @@ public abstract class Task implements EventSubscriber {
         }
 
         return isDone;
-    }
-
-    public ExitMsg joinb() {
-        Mailbox<ExitMsg> mb = new Mailbox<ExitMsg>();
-        informOnExit(mb);
-        return mb.getb();
-    }
-
-    public ExitMsg join() throws Pausable {
-        Mailbox<ExitMsg> mb = new Mailbox<ExitMsg>();
-        informOnExit(mb);
-        return mb.get();
     }
 
     @Override

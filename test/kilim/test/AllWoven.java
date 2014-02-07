@@ -11,14 +11,21 @@ import junit.framework.TestSuite;
 
 public class AllWoven extends TestSuite {
     public static Test suite() {
-        TestSuite ret = new AllWoven();
-        ret.addTestSuite(TestYield.class);
-        ret.addTestSuite(TestInterface.class);
-        ret.addTestSuite(TestYieldExceptions.class);
-        ret.addTestSuite(TestYieldJSR.class);
-        ret.addTestSuite(TestMailbox.class);
-        ret.addTestSuite(TestLock.class);
-        ret.addTestSuite(TestGenerics.class);
+        final TestSuite ret = new AllWoven();
+
+        ret.addTestSuite(TestBasicBlock.class);
+        ret.addTestSuite(TestClassInfo.class);
+        ret.addTestSuite(TestDynamicWeaver.class);
+        ret.addTestSuite(TestExprs.class);
+        ret.addTestSuite(TestFlow.class);
+        ret.addTestSuite(TestFrame.class);
+        ret.addTestSuite(TestInvalidPausables.class);
+        ret.addTestSuite(TestJSR.class);
+        ret.addTestSuite(TestRing.class);
+        ret.addTestSuite(TestTypeDesc.class);
+        ret.addTestSuite(TestUsage.class);
+        ret.addTestSuite(TestValue.class);
+
         return ret;
     }
 }
