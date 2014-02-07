@@ -442,7 +442,7 @@ public abstract class Task implements EventSubscriber {
         return pauseReason;
     }
 
-    public synchronized boolean isDone() {
+    public boolean isDone() {
         return done;
     }
 
