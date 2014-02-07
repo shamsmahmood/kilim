@@ -136,8 +136,7 @@ public abstract class Task implements EventSubscriber {
      * this method
      */
     public int getStackDepth() {
-        // TODO Shams change this to "resumeExecution"
-        final String DELIMIT_CALLER = "_runExecute";
+        final String DELIMIT_CALLER = "resumeExecution";
 
         StackTraceElement[] stes;
         stes = new Exception().getStackTrace();
