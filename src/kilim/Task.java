@@ -83,6 +83,7 @@ public abstract class Task implements EventSubscriber {
     public final static Timer timer = new Timer(true);
 
     public Task() {
+        // TODO remove id generation to minimize overhead
         id = idSource.incrementAndGet();
         fiber = new Fiber(this);
     }
@@ -477,7 +478,7 @@ public abstract class Task implements EventSubscriber {
             }
             if (exitMBs != null) {
                 if (pauseReason instanceof TaskDoneReason) {
-                    exitResult = ((TaskDoneReason) pauseReason).exitObj;
+                    exitResult = ((TaskDoneReason) pauseReason).exitReason();
                 }
                 ExitMsg msg = new ExitMsg(this, exitResult);
                 for (Mailbox<ExitMsg> exitMB : exitMBs) {
