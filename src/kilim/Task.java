@@ -135,12 +135,15 @@ public abstract class Task implements EventSubscriber {
      * this method
      */
     public int getStackDepth() {
+        // TODO Shams change this to "resumeExecution"
+        final String DELIMIT_CALLER = "_runExecute";
+
         StackTraceElement[] stes;
         stes = new Exception().getStackTrace();
         int len = stes.length;
         for (int i = 0; i < len; i++) {
             StackTraceElement ste = stes[i];
-            if (ste.getMethodName().equals("_runExecute")) {
+            if (ste.getMethodName().equals(DELIMIT_CALLER)) {
                 // discounting WorkerThread.run, Task._runExecute, and Scheduler.getStackDepth
                 return i - 1;
             }
@@ -509,6 +512,40 @@ public abstract class Task implements EventSubscriber {
                 resume();
             }
         }
+    }
+
+    /**
+     * synchronously execute the current task
+     *
+     * @return true if Task completed execution without being paused
+     * @throws NotPausable
+     */
+    public boolean resumeExecution() throws NotPausable {
+        final Fiber f = fiber;
+        boolean isDone = false;
+        try {
+            // start execute. fiber is wound to the beginning.
+            execute(f.begin());
+
+            // execute() done. Check fiber if it is pausing and reset it.
+            isDone = f.end() || (pauseReason instanceof TaskDoneReason);
+            assert (pauseReason == null && isDone) || (pauseReason != null && !isDone) : "pauseReason:" + pauseReason + ",isDone =" + isDone;
+        } catch (final Throwable th) {
+            th.printStackTrace();
+            // Definitely done
+            setPauseReason(new TaskDoneReason(th));
+            isDone = true;
+        }
+
+        if (isDone) {
+            done = true;
+            // inform on exit
+            assert numActivePins == 0 : ("Task ended but has " + numActivePins + " active locks");
+        } else {
+            assert numActivePins == 0 : ("Task suspended but has " + numActivePins + " active locks");
+        }
+
+        return isDone;
     }
 
     public ExitMsg joinb() {
