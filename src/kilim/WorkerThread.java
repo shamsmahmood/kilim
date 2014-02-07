@@ -20,8 +20,8 @@ public class WorkerThread extends Thread {
     public int numResumes = 0;
 
     WorkerThread(Scheduler ascheduler) {
-        super("KilimWorker-" + gid.incrementAndGet());
-        scheduler = ascheduler;
+        // we do not want to use kilim worker threads, disallow instantiation
+        throw new IllegalStateException("Unexpected use of kilim worker threads");
     }
 
     public void run() {
