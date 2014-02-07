@@ -6,6 +6,14 @@
 
 package kilim.test;
 
+import junit.framework.TestCase;
+import kilim.Pausable;
+import kilim.Scheduler;
+import kilim.http.HttpRequest;
+import kilim.http.HttpResponse;
+import kilim.http.HttpSession;
+import kilim.nio.NioSelectorScheduler;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.EOFException;
@@ -17,34 +25,26 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 
-import junit.framework.TestCase;
-import kilim.Pausable;
-import kilim.Scheduler;
-import kilim.http.HttpRequest;
-import kilim.http.HttpResponse;
-import kilim.http.HttpSession;
-import kilim.nio.NioSelectorScheduler;
-
 public class TestHTTP extends TestCase {
     static final int ITERS = 10;
     static final int NCLIENTS = 100;
 
     NioSelectorScheduler nio;
     int port;
-    
+
     @Override
     protected void setUp() throws Exception {
         nio = new NioSelectorScheduler(); // Starts a single thread that manages the select loop
         port = nio.listen(0, TestHttpServer.class, Scheduler.getDefaultScheduler()); //
         Thread.sleep(50); // Allow the socket to be registered and opened.
     }
-    
+
     @Override
     protected void tearDown() throws Exception {
         nio.shutdown();
         Scheduler.getDefaultScheduler().shutdown();
     }
-    
+
     public void testReqResp() throws IOException {
         String path = "/hello";
         URL url = new URL("http://localhost:" + port + path);
@@ -52,35 +52,35 @@ public class TestHTTP extends TestCase {
         conn.setDefaultUseCaches(false);
         BufferedReader in = new BufferedReader(
                 new InputStreamReader(
-                conn.getInputStream()));
+                        conn.getInputStream()));
         String s = in.readLine();
         assertTrue(s.contains(path));
         in.close();
     }
-    
+
     public void testQuery() throws IOException {
         String path = "/%7ekilim/home.html?info?code=200&desc=Rolls%20Royce";
         URL url = new URL("http://localhost:" + port + path);
-        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setDefaultUseCaches(false);
         BufferedReader in = new BufferedReader(
                 new InputStreamReader(
-                conn.getInputStream()));
+                        conn.getInputStream()));
         String s = in.readLine();
         assertTrue(s.contains("~kilim"));
         assertTrue(s.contains("desc:Rolls Royce"));
         in.close();
-        
+
     }
-    
+
     public void testChunking() throws IOException {
         String path = "/%7ekilim/home.html?buy?code=200&desc=Rolls%20Royce";
         URL url = new URL("http://localhost:" + port + path);
-        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setDefaultUseCaches(false);
         conn.setDoOutput(true);
         conn.setRequestMethod("POST");
-        conn.setChunkedStreamingMode(17); 
+        conn.setChunkedStreamingMode(17);
         StringBuilder sb = new StringBuilder(268);
         sb.append("BEGIN");
         for (int i = 0; i < 10; i++) {
@@ -89,23 +89,23 @@ public class TestHTTP extends TestCase {
         sb.append("END");
 
         BufferedWriter out = new BufferedWriter(new OutputStreamWriter(
-                    conn.getOutputStream()));
-        
+                conn.getOutputStream()));
+
         out.write(sb.toString());
         out.flush();
         BufferedReader in = new BufferedReader(
                 new InputStreamReader(
-                conn.getInputStream()));
+                        conn.getInputStream()));
         String s = in.readLine();
         assertEquals(s.length(), sb.length());
         assertTrue(s.startsWith("BEGIN"));
         assertTrue(s.endsWith("END"));
-        
+
         in.close();
         out.close();
-        
+
     }
-    
+
     public static class TestHttpServer extends HttpSession {
         public void execute() throws Pausable, Exception {
             try {

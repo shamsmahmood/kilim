@@ -6,21 +6,13 @@
 
 package kilim.test;
 
-import static kilim.Constants.D_ARRAY_BOOLEAN;
-import static kilim.Constants.D_BOOLEAN;
-import static kilim.Constants.D_DOUBLE;
-import static kilim.Constants.D_INT;
-import static kilim.Constants.D_LONG;
-import static kilim.Constants.D_OBJECT;
-import static kilim.Constants.D_RETURN_ADDRESS;
-import static kilim.Constants.D_STRING;
-import static kilim.Constants.D_THROWABLE;
-import static kilim.Constants.D_UNDEFINED;
 import kilim.analysis.BasicBlock;
 import kilim.analysis.Frame;
 import kilim.analysis.MethodFlow;
 import kilim.analysis.Usage;
 import kilim.analysis.Value;
+
+import static kilim.Constants.*;
 
 public class TestFrame extends Base {
     protected void setUp() throws Exception {
@@ -29,8 +21,9 @@ public class TestFrame extends Base {
 
     public void testMethodFrame() {
         MethodFlow flow = getFlow("kitchensink");
-        if (flow == null)
+        if (flow == null) {
             return;
+        }
         for (BasicBlock bb : flow.getBasicBlocks()) {
             if (bb.startPos == 0) {
                 Frame f = bb.startFrame;
@@ -101,8 +94,9 @@ public class TestFrame extends Base {
         g.push(Value.make(0, "Ljava/lang/Object;"));
 
         Usage usage = new Usage(4);
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < 4; i++) {
             usage.setLiveIn(i);
+        }
         Frame h = f.merge(g, /* localsOnly= */false, usage);
         assertNotSame(f, h);
         for (int i = 0; i < 4; i++) {

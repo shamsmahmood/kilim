@@ -37,8 +37,8 @@ public class ClassInfo {
         if (this == obj) {
             return true;
         }
-        if ((obj instanceof ClassInfo) 
-            && ((ClassInfo)obj).className.equals(this.className)) {
+        if ((obj instanceof ClassInfo)
+                && ((ClassInfo) obj).className.equals(this.className)) {
             return true;
         }
         return false;

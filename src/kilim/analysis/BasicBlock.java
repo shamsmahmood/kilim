@@ -4,40 +4,9 @@
  * specified in the file "License"
  */
 package kilim.analysis;
-import static kilim.Constants.D_ARRAY_BOOLEAN;
-import static kilim.Constants.D_ARRAY_BYTE;
-import static kilim.Constants.D_ARRAY_CHAR;
-import static kilim.Constants.D_ARRAY_DOUBLE;
-import static kilim.Constants.D_ARRAY_FLOAT;
-import static kilim.Constants.D_ARRAY_INT;
-import static kilim.Constants.D_ARRAY_LONG;
-import static kilim.Constants.D_ARRAY_SHORT;
-import static kilim.Constants.D_BOOLEAN;
-import static kilim.Constants.D_BYTE;
-import static kilim.Constants.D_CHAR;
-import static kilim.Constants.D_DOUBLE;
-import static kilim.Constants.D_FLOAT;
-import static kilim.Constants.D_INT;
-import static kilim.Constants.D_LONG;
-import static kilim.Constants.D_NULL;
-import static kilim.Constants.D_RETURN_ADDRESS;
-import static kilim.Constants.D_SHORT;
-import static kilim.Constants.D_VOID;
-import static kilim.Constants.TASK_CLASS;
-import static kilim.Constants.THROWABLE_CLASS;
-import static org.objectweb.asm.Opcodes.*;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Stack;
 
 import kilim.KilimException;
 import kilim.mirrors.Detector;
-
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.IincInsnNode;
@@ -53,6 +22,180 @@ import org.objectweb.asm.tree.TableSwitchInsnNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Stack;
+
+import static kilim.Constants.*;
+import static org.objectweb.asm.Opcodes.AALOAD;
+import static org.objectweb.asm.Opcodes.AASTORE;
+import static org.objectweb.asm.Opcodes.ACONST_NULL;
+import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.ANEWARRAY;
+import static org.objectweb.asm.Opcodes.ARETURN;
+import static org.objectweb.asm.Opcodes.ARRAYLENGTH;
+import static org.objectweb.asm.Opcodes.ASTORE;
+import static org.objectweb.asm.Opcodes.ATHROW;
+import static org.objectweb.asm.Opcodes.BALOAD;
+import static org.objectweb.asm.Opcodes.BASTORE;
+import static org.objectweb.asm.Opcodes.BIPUSH;
+import static org.objectweb.asm.Opcodes.CALOAD;
+import static org.objectweb.asm.Opcodes.CASTORE;
+import static org.objectweb.asm.Opcodes.CHECKCAST;
+import static org.objectweb.asm.Opcodes.D2F;
+import static org.objectweb.asm.Opcodes.D2I;
+import static org.objectweb.asm.Opcodes.D2L;
+import static org.objectweb.asm.Opcodes.DADD;
+import static org.objectweb.asm.Opcodes.DALOAD;
+import static org.objectweb.asm.Opcodes.DASTORE;
+import static org.objectweb.asm.Opcodes.DCMPG;
+import static org.objectweb.asm.Opcodes.DCMPL;
+import static org.objectweb.asm.Opcodes.DCONST_0;
+import static org.objectweb.asm.Opcodes.DCONST_1;
+import static org.objectweb.asm.Opcodes.DDIV;
+import static org.objectweb.asm.Opcodes.DLOAD;
+import static org.objectweb.asm.Opcodes.DMUL;
+import static org.objectweb.asm.Opcodes.DNEG;
+import static org.objectweb.asm.Opcodes.DREM;
+import static org.objectweb.asm.Opcodes.DRETURN;
+import static org.objectweb.asm.Opcodes.DSTORE;
+import static org.objectweb.asm.Opcodes.DSUB;
+import static org.objectweb.asm.Opcodes.DUP;
+import static org.objectweb.asm.Opcodes.DUP2;
+import static org.objectweb.asm.Opcodes.DUP2_X1;
+import static org.objectweb.asm.Opcodes.DUP2_X2;
+import static org.objectweb.asm.Opcodes.DUP_X1;
+import static org.objectweb.asm.Opcodes.DUP_X2;
+import static org.objectweb.asm.Opcodes.F2D;
+import static org.objectweb.asm.Opcodes.F2I;
+import static org.objectweb.asm.Opcodes.F2L;
+import static org.objectweb.asm.Opcodes.FADD;
+import static org.objectweb.asm.Opcodes.FALOAD;
+import static org.objectweb.asm.Opcodes.FASTORE;
+import static org.objectweb.asm.Opcodes.FCMPG;
+import static org.objectweb.asm.Opcodes.FCMPL;
+import static org.objectweb.asm.Opcodes.FCONST_0;
+import static org.objectweb.asm.Opcodes.FCONST_1;
+import static org.objectweb.asm.Opcodes.FCONST_2;
+import static org.objectweb.asm.Opcodes.FDIV;
+import static org.objectweb.asm.Opcodes.FLOAD;
+import static org.objectweb.asm.Opcodes.FMUL;
+import static org.objectweb.asm.Opcodes.FNEG;
+import static org.objectweb.asm.Opcodes.FREM;
+import static org.objectweb.asm.Opcodes.FRETURN;
+import static org.objectweb.asm.Opcodes.FSTORE;
+import static org.objectweb.asm.Opcodes.FSUB;
+import static org.objectweb.asm.Opcodes.GETFIELD;
+import static org.objectweb.asm.Opcodes.GETSTATIC;
+import static org.objectweb.asm.Opcodes.GOTO;
+import static org.objectweb.asm.Opcodes.I2B;
+import static org.objectweb.asm.Opcodes.I2C;
+import static org.objectweb.asm.Opcodes.I2D;
+import static org.objectweb.asm.Opcodes.I2F;
+import static org.objectweb.asm.Opcodes.I2L;
+import static org.objectweb.asm.Opcodes.I2S;
+import static org.objectweb.asm.Opcodes.IADD;
+import static org.objectweb.asm.Opcodes.IALOAD;
+import static org.objectweb.asm.Opcodes.IAND;
+import static org.objectweb.asm.Opcodes.IASTORE;
+import static org.objectweb.asm.Opcodes.ICONST_0;
+import static org.objectweb.asm.Opcodes.ICONST_1;
+import static org.objectweb.asm.Opcodes.ICONST_2;
+import static org.objectweb.asm.Opcodes.ICONST_3;
+import static org.objectweb.asm.Opcodes.ICONST_4;
+import static org.objectweb.asm.Opcodes.ICONST_5;
+import static org.objectweb.asm.Opcodes.ICONST_M1;
+import static org.objectweb.asm.Opcodes.IDIV;
+import static org.objectweb.asm.Opcodes.IFEQ;
+import static org.objectweb.asm.Opcodes.IFGE;
+import static org.objectweb.asm.Opcodes.IFGT;
+import static org.objectweb.asm.Opcodes.IFLE;
+import static org.objectweb.asm.Opcodes.IFLT;
+import static org.objectweb.asm.Opcodes.IFNE;
+import static org.objectweb.asm.Opcodes.IFNONNULL;
+import static org.objectweb.asm.Opcodes.IFNULL;
+import static org.objectweb.asm.Opcodes.IF_ACMPEQ;
+import static org.objectweb.asm.Opcodes.IF_ACMPNE;
+import static org.objectweb.asm.Opcodes.IF_ICMPEQ;
+import static org.objectweb.asm.Opcodes.IF_ICMPGE;
+import static org.objectweb.asm.Opcodes.IF_ICMPGT;
+import static org.objectweb.asm.Opcodes.IF_ICMPLE;
+import static org.objectweb.asm.Opcodes.IF_ICMPLT;
+import static org.objectweb.asm.Opcodes.IF_ICMPNE;
+import static org.objectweb.asm.Opcodes.IINC;
+import static org.objectweb.asm.Opcodes.ILOAD;
+import static org.objectweb.asm.Opcodes.IMUL;
+import static org.objectweb.asm.Opcodes.INEG;
+import static org.objectweb.asm.Opcodes.INSTANCEOF;
+import static org.objectweb.asm.Opcodes.INVOKEINTERFACE;
+import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
+import static org.objectweb.asm.Opcodes.INVOKESTATIC;
+import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
+import static org.objectweb.asm.Opcodes.IOR;
+import static org.objectweb.asm.Opcodes.IREM;
+import static org.objectweb.asm.Opcodes.IRETURN;
+import static org.objectweb.asm.Opcodes.ISHL;
+import static org.objectweb.asm.Opcodes.ISHR;
+import static org.objectweb.asm.Opcodes.ISTORE;
+import static org.objectweb.asm.Opcodes.ISUB;
+import static org.objectweb.asm.Opcodes.IUSHR;
+import static org.objectweb.asm.Opcodes.IXOR;
+import static org.objectweb.asm.Opcodes.JSR;
+import static org.objectweb.asm.Opcodes.L2D;
+import static org.objectweb.asm.Opcodes.L2F;
+import static org.objectweb.asm.Opcodes.L2I;
+import static org.objectweb.asm.Opcodes.LADD;
+import static org.objectweb.asm.Opcodes.LALOAD;
+import static org.objectweb.asm.Opcodes.LAND;
+import static org.objectweb.asm.Opcodes.LASTORE;
+import static org.objectweb.asm.Opcodes.LCMP;
+import static org.objectweb.asm.Opcodes.LCONST_0;
+import static org.objectweb.asm.Opcodes.LCONST_1;
+import static org.objectweb.asm.Opcodes.LDC;
+import static org.objectweb.asm.Opcodes.LDIV;
+import static org.objectweb.asm.Opcodes.LLOAD;
+import static org.objectweb.asm.Opcodes.LMUL;
+import static org.objectweb.asm.Opcodes.LNEG;
+import static org.objectweb.asm.Opcodes.LOOKUPSWITCH;
+import static org.objectweb.asm.Opcodes.LOR;
+import static org.objectweb.asm.Opcodes.LREM;
+import static org.objectweb.asm.Opcodes.LRETURN;
+import static org.objectweb.asm.Opcodes.LSHL;
+import static org.objectweb.asm.Opcodes.LSHR;
+import static org.objectweb.asm.Opcodes.LSTORE;
+import static org.objectweb.asm.Opcodes.LSUB;
+import static org.objectweb.asm.Opcodes.LUSHR;
+import static org.objectweb.asm.Opcodes.LXOR;
+import static org.objectweb.asm.Opcodes.MONITORENTER;
+import static org.objectweb.asm.Opcodes.MONITOREXIT;
+import static org.objectweb.asm.Opcodes.MULTIANEWARRAY;
+import static org.objectweb.asm.Opcodes.NEW;
+import static org.objectweb.asm.Opcodes.NEWARRAY;
+import static org.objectweb.asm.Opcodes.NOP;
+import static org.objectweb.asm.Opcodes.POP;
+import static org.objectweb.asm.Opcodes.POP2;
+import static org.objectweb.asm.Opcodes.PUTFIELD;
+import static org.objectweb.asm.Opcodes.PUTSTATIC;
+import static org.objectweb.asm.Opcodes.RET;
+import static org.objectweb.asm.Opcodes.RETURN;
+import static org.objectweb.asm.Opcodes.SALOAD;
+import static org.objectweb.asm.Opcodes.SASTORE;
+import static org.objectweb.asm.Opcodes.SIPUSH;
+import static org.objectweb.asm.Opcodes.SWAP;
+import static org.objectweb.asm.Opcodes.TABLESWITCH;
+import static org.objectweb.asm.Opcodes.T_BOOLEAN;
+import static org.objectweb.asm.Opcodes.T_BYTE;
+import static org.objectweb.asm.Opcodes.T_CHAR;
+import static org.objectweb.asm.Opcodes.T_DOUBLE;
+import static org.objectweb.asm.Opcodes.T_FLOAT;
+import static org.objectweb.asm.Opcodes.T_INT;
+import static org.objectweb.asm.Opcodes.T_LONG;
+import static org.objectweb.asm.Opcodes.T_SHORT;
+
 /**
  * A basic block is a contiguous set of instructions that has one label at the
  * first instruction and a transfer-of-control instruction at the very end. A
@@ -61,7 +204,7 @@ import org.objectweb.asm.tree.VarInsnNode;
  * There can be no target labels in the middle of a basic block; in other words,
  * you can't jump into the middle of a basic block. This is the standard
  * definition; we make a few changes.
- * 
+ * <p/>
  * <dl>
  * <li>
  * We create BasicBlocks whenever we encounter a label (in a linear
@@ -76,11 +219,11 @@ import org.objectweb.asm.tree.VarInsnNode;
  * invocation with their predecessor, because we need these blocks to
  * tell us about downstream usage of local vars to help us generate
  * optimal continuations. </li>
-
- * 
+ * <p/>
+ * <p/>
  * <li> All catch handlers that intersect a basic block are treated as
  * successors to the block, for the purposes of liveness analysis.
- * 
+ * <p/>
  * <li> Subroutines (targets of JSR) are treated specially. We inline all JSR
  * calls, including nested JSRs, to simplify liveness analysis. In this phase, a
  * JSR/RET is treated the same as a GOTO sub followed by a GOTO to the caller.
@@ -88,7 +231,7 @@ import org.objectweb.asm.tree.VarInsnNode;
  * subroutine doesn't have any pausable methods. If it does, then we spit out
  * duplicate code, complete with GOTOs as described above. This allows us to
  * jump in the middle of a "finally" block during rewinding.
- * 
+ * <p/>
  * Note: The JVM reference doesn't specify the boundaries of a JSR instruction;
  * in other words, there is no definitive way of saying which blocks belong to a
  * subroutine. This code treats the set of all nodes reachable via branching
@@ -102,119 +245,119 @@ public class BasicBlock implements Comparable<BasicBlock> {
      * A number handed out in increasing order of starting position, to ease
      * sorting as well as for debug information
      */
-    public int                    id;
+    public int id;
 
     /*
      * One of the bit flags above.
      */
-    int                           flags;
+    int flags;
 
     /*
      * Used by the flow analysis algorithm to mark this BB as enqueued for
      * processing
      */
-    static final int              ENQUEUED           = 1;
+    static final int ENQUEUED = 1;
 
     /*
      * Used by the JSR inlining process to signify that a subroutine (a JSR
      * target) has been claimed by a corresponding call. All other JSR calls
      * pointing to this subroutine have to make their own duplicates.
      */
-    static final int              SUBROUTINE_CLAIMED = 1 << 1;
+    static final int SUBROUTINE_CLAIMED = 1 << 1;
     /*
      * Flag used by the consolidation process to avoid processing this block
      * again.
      */
-    static final int              COALESCED          = 1 << 2;
+    static final int COALESCED = 1 << 2;
     /*
      * Set if this BB contains a call to a pausable method
      */
-    static final int              PAUSABLE           = 1 << 4;
+    static final int PAUSABLE = 1 << 4;
     /*
      * Set if this block is the entry point to a subroutine and the target of
      * one or more JSR instructions
      */
-    static final int              IS_SUBROUTINE      = 1 << 5;
+    static final int IS_SUBROUTINE = 1 << 5;
     /*
      * Set if this block belongs to a subroutine
      */
-    static final int              SUB_BLOCK          = 1 << 6;
+    static final int SUB_BLOCK = 1 << 6;
     /*
      * Set by the subroutine inlining phase to avoid rechecking this BB.
      */
-    static final int              INLINE_CHECKED     = 1 << 7;
+    static final int INLINE_CHECKED = 1 << 7;
 
     /*
      * Set for the entry point to a subroutine that contains a pausable
      * method. The entry point is the target of a JSR instruction.
      */
-    static final int              PAUSABLE_SUB           = 1 << 8;
+    static final int PAUSABLE_SUB = 1 << 8;
     /**
      * The flow to which this BB belongs.
      */
-    public MethodFlow             flow;
+    public MethodFlow flow;
 
     /**
      * The label that starts this BB. In some cases we create a label where it
      * didn't exist originally (after a jmp instruction, for example). This
      * allows us a unique indexing scheme.
      */
-    public LabelNode                  startLabel;
+    public LabelNode startLabel;
 
     /**
      * Start and end points (both inclusive) in the current method's list of
      * instructions (this.flow.instructions)
      */
-    public int                    startPos = -1;
+    public int startPos = -1;
 
-    public int                    endPos = -1;
+    public int endPos = -1;
 
     /**
-     * List of successors (follower and all branch targets). Should be null 
+     * List of successors (follower and all branch targets). Should be null
      */
-    public ArrayList<BasicBlock>  successors         = new ArrayList<BasicBlock>(3);
+    public ArrayList<BasicBlock> successors = new ArrayList<BasicBlock>(3);
 
-    public ArrayList<Handler>     handlers           = new ArrayList<Handler>(2);
+    public ArrayList<Handler> handlers = new ArrayList<Handler>(2);
 
-    int                           numPredecessors;
+    int numPredecessors;
 
     /**
      * usage initially contains the usage of local variables in this block
      * (without reference to any other block). After flow analysis it contains
      * the combined effect of this and all downstream blocks
      */
-    public Usage                  usage;
+    public Usage usage;
 
     /**
      * A cached version of all sucessors' usage, successors being catch handlers
      * and real successors.
      */
-    ArrayList<Usage>      succUsage;
+    ArrayList<Usage> succUsage;
 
     /**
      * The frame at the BB's entry point. It changes when propagating changes
      * from its predeccessors, until there's a fixed point.
      */
-    public Frame                  startFrame;
+    public Frame startFrame;
 
     /*
      * If this BB is a catch block (the entry point to a series of catch handler
      * blocks, it contains the type of the exception
      */
 
-    String                caughtExceptionType;
+    String caughtExceptionType;
 
     /*
      * The BB that follows this BB. Is null if the last instruction is a GOTO or
      * THROW or RETURN or RET. The follower is also part of the successors list.
      */
-    BasicBlock            follower;
+    BasicBlock follower;
 
     /*
      * sa subroutine, subBlocks contains the list of BBs that belong to it.
      */
     ArrayList<BasicBlock> subBlocks;
-    
+
     public BasicBlock(MethodFlow aflow, LabelNode aStartLabel) {
         flow = aflow;
         startLabel = aStartLabel;
@@ -223,20 +366,20 @@ public class BasicBlock implements Comparable<BasicBlock> {
     }
 
     Detector detector() {
-    	return flow.detector();
+        return flow.detector();
     }
-    
+
     /**
      * Absorb as many instructions until the next label or the next transfer of
      * control instruction. In the first pass we may end up creating many many
      * BBs because there may be a lot of non-target labels (esp. when debug
      * information is available). The constraints are as follows:
-     *   1. A transfer of control instruction must be the last instruction. It 
-     *      may also be the first (and only) instruction
-     *   2. A labeled instruction must be the first instruction in a BB. It
-     *      may optionally be the last (and only) instruction
-     *   3. A pausable method is treated like a labeled instruction, and is 
-     *      given a label if there isn't one already. Constraint 2 applies.
+     * 1. A transfer of control instruction must be the last instruction. It
+     * may also be the first (and only) instruction
+     * 2. A labeled instruction must be the first instruction in a BB. It
+     * may optionally be the last (and only) instruction
+     * 3. A pausable method is treated like a labeled instruction, and is
+     * given a label if there isn't one already. Constraint 2 applies.
      */
     @SuppressWarnings("unchecked")
     int initialize(int pos) {
@@ -272,9 +415,9 @@ public class BasicBlock implements Comparable<BasicBlock> {
                 case ASTORE:
                     usage.write(((VarInsnNode) ain).var);
                     break;
-                    
+
                 case IINC:
-                    int v = ((IincInsnNode)ain).var;
+                    int v = ((IincInsnNode) ain).var;
                     usage.read(v);
                     usage.write(v);
                     break;
@@ -333,7 +476,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                         defaultLabel = ((LookupSwitchInsnNode) ain).dflt;
                         otherLabels = ((LookupSwitchInsnNode) ain).labels;
                     }
-                    for (Iterator<LabelNode> it = otherLabels.iterator(); it.hasNext();) {
+                    for (Iterator<LabelNode> it = otherLabels.iterator(); it.hasNext(); ) {
                         l = it.next();
                         addSuccessor(flow.getOrCreateBasicBlock(l));
                     }
@@ -362,13 +505,16 @@ public class BasicBlock implements Comparable<BasicBlock> {
                     break;
 
                 default:
-                	if (opcode >= 26 && opcode <= 45)
-                    	throw new IllegalStateException("instruction variants not expected here");
-                	
+                    if (opcode >= 26 && opcode <= 45) {
+                        throw new IllegalStateException("instruction variants not expected here");
+                    }
+
                     break;
             }
 
-            if (endOfBB) break;
+            if (endOfBB) {
+                break;
+            }
         }
         endPos = pos;
         if (hasFollower && (pos + 1) < flow.instructions.size()) {
@@ -387,8 +533,8 @@ public class BasicBlock implements Comparable<BasicBlock> {
     }
 
     void addSuccessor(BasicBlock bb) {
-        if (!successors.contains(bb)) { 
-            this.successors.add(bb); 
+        if (!successors.contains(bb)) {
+            this.successors.add(bb);
             bb.numPredecessors++;
         }
     }
@@ -401,7 +547,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
         AbstractInsnNode ainode = getInstruction(endPos);
         return ainode.getOpcode();
     }
-    
+
     /*
      * Blocks connected by an edge are candidates for coalescing if: <dl> <li>
      * There is a single edge between the two and neither has any other edges.
@@ -503,7 +649,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                     case ACONST_NULL:
                         frame.push(Value.make(i, D_NULL));
                         break;
-                        
+
                     case ICONST_M1:
                     case ICONST_0:
                     case ICONST_1:
@@ -514,53 +660,50 @@ public class BasicBlock implements Comparable<BasicBlock> {
                         frame.push(Value.make(i, D_INT, new Integer(opcode
                                 - ICONST_0)));
                         break;
-                        
-                        
+
                     case LCONST_0:
                     case LCONST_1:
                         frame.push(Value.make(i, D_LONG, new Long(opcode - LCONST_0)));
                         break;
-                        
+
                     case ILOAD:
                     case LLOAD:
                     case FLOAD:
                     case DLOAD:
                     case ALOAD:
-                        var = ((VarInsnNode)ain).var;
+                        var = ((VarInsnNode) ain).var;
                         v = frame.getLocal(var, opcode);
                         frame.push(v);
                         break;
-                        
+
                     case FCONST_0:
                     case FCONST_1:
                     case FCONST_2:
                         frame.push(Value.make(i, D_FLOAT, new Float(opcode
                                 - FCONST_0)));
                         break;
-                        
+
                     case DCONST_0:
                     case DCONST_1:
                         frame.push(Value.make(i, D_DOUBLE, new Double(opcode
                                 - DCONST_0)));
                         break;
-                        
-                        
+
                     case BIPUSH:
                         val = ((IntInsnNode) ain).operand;
                         frame.push(Value.make(i, D_BYTE, new Integer(val)));
                         break;
-                        
+
                     case SIPUSH:
                         val = ((IntInsnNode) ain).operand;
                         frame.push(Value.make(i, D_SHORT, new Integer(val)));
                         break;
-                        
+
                     case LDC:
                         Object cval = ((LdcInsnNode) ain).cst;
                         frame.push(Value.make(i, TypeDesc.getTypeDesc(cval), cval));
                         break;
-                        
-                        
+
                     case IALOAD:
                     case LALOAD:
                     case FALOAD:
@@ -577,7 +720,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                         // of
                         // array
                         break;
-                        
+
                     case ISTORE:
                     case LSTORE:
                     case FSTORE:
@@ -587,7 +730,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                         var = ((VarInsnNode) ain).var;
                         frame.setLocal(var, v1);
                         break;
-                        
+
                     case IASTORE:
                     case LASTORE:
                     case FASTORE:
@@ -599,24 +742,24 @@ public class BasicBlock implements Comparable<BasicBlock> {
                         canThrowException = true;
                         frame.popn(3);
                         break;
-                        
+
                     case POP:
                         frame.popWord();
                         break;
-                        
+
                     case POP2:
                         if (frame.pop().isCategory1()) {
                             frame.popWord();
                         }
                         break;
-                        
+
                     case DUP:
                         // ... w => ... w w
                         v = frame.popWord();
                         frame.push(v);
                         frame.push(v);
                         break;
-                        
+
                     case DUP_X1:
                         // Insert top word beneath the next word
                         // .. w2 w1 => .. w1 w2 w1
@@ -626,7 +769,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                         frame.push(v2);
                         frame.push(v1);
                         break;
-                        
+
                     case DUP_X2:
                         // Insert top word beneath the next two words (or dword)
                         v1 = frame.popWord();
@@ -649,7 +792,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                             break;
                         }
                         throw new InternalError("Illegal use of DUP_X2");
-                        
+
                     case DUP2:
                         // duplicate top two words (or dword)
                         v1 = frame.pop();
@@ -670,7 +813,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                             break;
                         }
                         throw new InternalError("Illegal use of DUP2");
-                        
+
                     case DUP2_X1:
                         // insert two words (or dword) beneath next word
                         v1 = frame.pop();
@@ -746,7 +889,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                             }
                         }
                         throw new InternalError("Illegal use of DUP2_X2");
-                        
+
                     case SWAP:
                         // w2, w1 => w1, w2
                         v1 = frame.popWord();
@@ -754,7 +897,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                         frame.push(v1);
                         frame.push(v2);
                         break;
-                        
+
                     case IDIV:
                     case IREM:
                     case LDIV:
@@ -762,7 +905,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                         frame.pop(); // See next case
                         canThrowException = true;
                         break;
-                        
+
                     case IADD:
                     case LADD:
                     case FADD:
@@ -797,7 +940,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                         // The result is always the same type as the first arg
                         frame.push(Value.make(i, v.getTypeDesc()));
                         break;
-                        
+
                     case LCMP:
                     case FCMPL:
                     case FCMPG:
@@ -806,7 +949,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                         frame.popn(2);
                         frame.push(Value.make(i, D_INT));
                         break;
-                        
+
                     case INEG:
                     case LNEG:
                     case FNEG:
@@ -814,55 +957,55 @@ public class BasicBlock implements Comparable<BasicBlock> {
                         v = frame.pop();
                         frame.push(Value.make(i, v.getTypeDesc()));
                         break;
-                        
+
                     case IINC:
                         var = ((IincInsnNode) ain).var;
                         frame.setLocal(var, Value.make(i, D_INT));
                         break;
-                        
+
                     case I2L:
                     case F2L:
                     case D2L:
                         frame.pop();
                         frame.push(Value.make(i, D_LONG));
                         break;
-                        
+
                     case I2D:
                     case L2D:
                     case F2D:
                         frame.pop();
                         frame.push(Value.make(i, D_DOUBLE));
                         break;
-                        
+
                     case I2F:
                     case L2F:
                     case D2F:
                         frame.pop();
                         frame.push(Value.make(i, D_FLOAT));
                         break;
-                        
+
                     case L2I:
                     case F2I:
                     case D2I:
                         frame.pop();
                         frame.push(Value.make(i, D_INT));
                         break;
-                        
+
                     case I2B:
                         frame.popWord();
                         frame.push(Value.make(i, D_BOOLEAN));
                         break;
-                        
+
                     case I2C:
                         frame.popWord();
                         frame.push(Value.make(i, D_CHAR));
                         break;
-                        
+
                     case I2S:
                         frame.popWord();
                         frame.push(Value.make(i, D_SHORT));
                         break;
-                        
+
                     case IFEQ:
                     case IFNE:
                     case IFLT:
@@ -873,7 +1016,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                     case IFNONNULL:
                         frame.popWord();
                         break;
-                        
+
                     case IF_ICMPEQ:
                     case IF_ICMPNE:
                     case IF_ICMPLT:
@@ -884,19 +1027,19 @@ public class BasicBlock implements Comparable<BasicBlock> {
                     case IF_ACMPNE:
                         frame.popn(2);
                         break;
-                        
+
                     case GOTO:
                     case JSR: // note: the targetBB pushes the return address
                         // itself
                         // because it is marked with isSubroutine
                     case RET:
                         break;
-                        
+
                     case TABLESWITCH:
                     case LOOKUPSWITCH:
                         frame.pop();
                         break;
-                        
+
                     case IRETURN:
                     case LRETURN:
                     case FRETURN:
@@ -911,18 +1054,18 @@ public class BasicBlock implements Comparable<BasicBlock> {
                             throw new InternalError("stack non null at method return");
                         }
                         break;
-                        
+
                     case GETSTATIC:
                         canThrowException = true;
                         v = Value.make(i, TypeDesc.getInterned(((FieldInsnNode) ain).desc));
                         frame.push(v);
                         break;
-                        
+
                     case PUTSTATIC:
                         canThrowException = true;
                         frame.pop();
                         break;
-                        
+
                     case GETFIELD:
                         canThrowException = true;
                         v1 = frame.pop();
@@ -932,7 +1075,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                         //}
                         frame.push(v);
                         break;
-                        
+
                     case PUTFIELD:
                         canThrowException = true;
                         v1 = frame.pop();
@@ -941,7 +1084,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                         //    System.out.println("PUTFIELD " + ((FieldInsnNode)ain).name  + ": " + v + " ----> " + v1);
                         //}
                         break;
-                        
+
                     case INVOKEVIRTUAL:
                     case INVOKESPECIAL:
                     case INVOKESTATIC:
@@ -952,7 +1095,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                         if (flow.isPausableMethodInsn(min) && frame.numMonitorsActive > 0) {
                             throw new KilimException("Error: Can not call pausable nethods from within a synchronized block\n" +
                                     "Caller: " + this.flow.classFlow.name.replace('/', '.') + "." + this.flow.name + this.flow.desc +
-                                    "\nCallee: " + ((MethodInsnNode)ain).name); 
+                                    "\nCallee: " + ((MethodInsnNode) ain).name);
                         }
                         canThrowException = true;
                         frame.popn(TypeDesc.getNumArgumentTypes(desc));
@@ -965,13 +1108,13 @@ public class BasicBlock implements Comparable<BasicBlock> {
                             frame.push(Value.make(i, desc));
                         }
                         break;
-                        
+
                     case NEW:
                         canThrowException = true;
                         v = Value.make(i, TypeDesc.getInterned(((TypeInsnNode) ain).desc));
                         frame.push(v);
                         break;
-                        
+
                     case NEWARRAY:
                         canThrowException = true;
                         frame.popWord();
@@ -1015,32 +1158,32 @@ public class BasicBlock implements Comparable<BasicBlock> {
                         v = Value.make(i, TypeDesc.getInterned("[" + componentType));
                         frame.push(v);
                         break;
-                        
+
                     case ARRAYLENGTH:
                         canThrowException = true;
                         frame.popWord();
                         frame.push(Value.make(i, D_INT));
                         break;
-                        
+
                     case ATHROW:
                         canThrowException = true;
                         frame.pop();
                         propagateFrame = false;
                         break;
-                        
+
                     case CHECKCAST:
                         canThrowException = true;
                         frame.pop();
                         v = Value.make(i, TypeDesc.getInterned(((TypeInsnNode) ain).desc));
                         frame.push(v);
                         break;
-                        
+
                     case INSTANCEOF:
                         canThrowException = true;
                         frame.pop();
                         frame.push(Value.make(i, D_INT));
                         break;
-                        
+
                     case MONITORENTER:
                     case MONITOREXIT:
                         if (opcode == MONITORENTER) {
@@ -1052,7 +1195,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                         frame.pop();
                         canThrowException = true;
                         break;
-                        
+
                     case MULTIANEWARRAY:
                         MultiANewArrayInsnNode minode = (MultiANewArrayInsnNode) ain;
                         int dims = minode.dims;
@@ -1060,8 +1203,9 @@ public class BasicBlock implements Comparable<BasicBlock> {
                         componentType = TypeDesc.getInterned(minode.desc);
                         StringBuffer sb = new StringBuffer(componentType.length()
                                 + dims);
-                        for (int j = 0; j < dims; j++)
+                        for (int j = 0; j < dims; j++) {
                             sb.append('[');
+                        }
                         sb.append(componentType);
                         v = Value.make(i, TypeDesc.getInterned(sb.toString()));
                         frame.push(v);
@@ -1091,16 +1235,17 @@ public class BasicBlock implements Comparable<BasicBlock> {
         }
 
     }
- /*
-    private boolean checkReceiverType(Value v, MethodInsnNode min) {
-        String t = v.getTypeDesc();
-        if (t == D_NULL) {
-            return true;
-        }
-        t = TypeDesc.getInternalName(t);
-        return detector().getPausableStatus(t, min.name, min.desc)  != Detector.METHOD_NOT_FOUND;
-    }
- */
+
+    /*
+       private boolean checkReceiverType(Value v, MethodInsnNode min) {
+           String t = v.getTypeDesc();
+           if (t == D_NULL) {
+               return true;
+           }
+           t = TypeDesc.getInternalName(t);
+           return detector().getPausableStatus(t, min.name, min.desc)  != Detector.METHOD_NOT_FOUND;
+       }
+    */
     public boolean isCatchHandler() {
         return caughtExceptionType != null;
     }
@@ -1176,24 +1321,23 @@ public class BasicBlock implements Comparable<BasicBlock> {
      * into a GOTO is that if we don't find any pausable methods in a
      * subroutine, then during code generation we'll simply use the original
      * code. The duplication is still required for flow analysis.
-     * 
+     * <p/>
      * The VM spec is fuzzy on what constitutes the boundaries of a subroutine.
      * We consider the following situations invalid, even though the verifier is
      * ok with it: (a) looping back to itself (b) encountering xRETURN in a subroutine
-     * 
+     * <p/>
      * inline() traverses the graph creating copies of BasicBlocks and labels
      * and keeps a mapping between the old and the new. In the second round, it
      * copies instructions translating any that have labels (branch and switch
      * instructions).
-     * 
+     *
      * @return mapping of orig basic blocks to new.
-     * 
      */
     ArrayList<BasicBlock> inline() throws KilimException {
         HashMap<BasicBlock, BasicBlock> bbCopyMap = null;
         HashMap<LabelNode, LabelNode> labelCopyMap = null;
         BasicBlock targetBB = successors.get(0);
-        LabelNode returnToLabel = flow.getOrCreateLabelAtPos(endPos+1);
+        LabelNode returnToLabel = flow.getOrCreateLabelAtPos(endPos + 1);
         BasicBlock returnToBB = flow.getOrCreateBasicBlock(returnToLabel);
         boolean isPausableSub = targetBB.hasFlag(PAUSABLE_SUB);
 
@@ -1222,12 +1366,12 @@ public class BasicBlock implements Comparable<BasicBlock> {
     }
 
     void dupBBAndLabels(boolean deepCopy,
-            HashMap<BasicBlock, BasicBlock> bbCopyMap,
-            HashMap<LabelNode, LabelNode> labelCopyMap, BasicBlock returnToBB)
-                                                                      throws KilimException {
+                        HashMap<BasicBlock, BasicBlock> bbCopyMap,
+                        HashMap<LabelNode, LabelNode> labelCopyMap, BasicBlock returnToBB)
+            throws KilimException {
 
         for (BasicBlock orig : getSubBlocks()) {
-            BasicBlock dup = new BasicBlock(flow, orig.startLabel); 
+            BasicBlock dup = new BasicBlock(flow, orig.startLabel);
             bbCopyMap.put(orig, dup);
             if (deepCopy) {
                 // copy labels for each instruction. This copy will be used
@@ -1240,14 +1384,14 @@ public class BasicBlock implements Comparable<BasicBlock> {
                     }
                 }
                 // dup.startLabel reset later in dupCopyContents
-            } 
+            }
         }
     }
 
     static ArrayList<BasicBlock> dupCopyContents(boolean deepCopy,
-            BasicBlock targetBB, BasicBlock returnToBB,
-            HashMap<BasicBlock, BasicBlock> bbCopyMap,
-            HashMap<LabelNode, LabelNode> labelCopyMap) throws KilimException {
+                                                 BasicBlock targetBB, BasicBlock returnToBB,
+                                                 HashMap<BasicBlock, BasicBlock> bbCopyMap,
+                                                 HashMap<LabelNode, LabelNode> labelCopyMap) throws KilimException {
 
         ArrayList<BasicBlock> newBBs = new ArrayList<BasicBlock>(targetBB.getSubBlocks().size());
         for (BasicBlock orig : targetBB.getSubBlocks()) {
@@ -1293,7 +1437,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                 int end = orig.endPos;
 
                 // create new labels and instructions
-                for (i = orig.startPos;  i <= end; i++, newPos++) {
+                for (i = orig.startPos; i <= end; i++, newPos++) {
                     LabelNode l = flow.getLabelAt(i);
                     if (l != null) {
                         l = labelCopyMap.get(l);
@@ -1302,7 +1446,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                     }
                     extraInsns.add(instructions.get(i).clone(labelCopyMap));
                 }
-                
+
                 // new handlers
                 dup.handlers = new ArrayList<Handler>(orig.handlers.size());
                 if (orig.handlers.size() > 0) {
@@ -1319,7 +1463,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
         }
         return newBBs;
     }
-    
+
     public BasicBlock getJSRTarget() {
         return lastInstruction() == JSR ? successors.get(0) : null;
     }
@@ -1330,8 +1474,9 @@ public class BasicBlock implements Comparable<BasicBlock> {
      */
     public ArrayList<BasicBlock> getSubBlocks() throws KilimException {
         if (subBlocks == null) {
-            if (!hasFlag(IS_SUBROUTINE))
+            if (!hasFlag(IS_SUBROUTINE)) {
                 return null;
+            }
             subBlocks = new ArrayList<BasicBlock>(10);
             Stack<BasicBlock> stack = new Stack<BasicBlock>();
             this.setFlag(SUB_BLOCK);
@@ -1365,11 +1510,13 @@ public class BasicBlock implements Comparable<BasicBlock> {
     }
 
     BasicBlock getFollowingBlock() {
-        if (follower != null) return follower;
+        if (follower != null) {
+            return follower;
+        }
         // otherwise we'll return the next block anyway. This is used
         // to get the block following a JSR instruction, even though 
         // it is not a follower in the control flow sense.
-        LabelNode l = flow.getLabelAt(endPos+1);
+        LabelNode l = flow.getLabelAt(endPos + 1);
         assert l != null : "No block follows this block: " + this;
         return flow.getBasicBlock(l);
     }
@@ -1380,18 +1527,18 @@ public class BasicBlock implements Comparable<BasicBlock> {
         sb.append("\n========== BB #").append(id).append("[").append(System.identityHashCode(this)).append("]\n");
         sb.append("method: ").append(this.flow.name).append(this.flow.desc).append("\n");
         sb.append("start = ").append(startPos).append(",end = ").append(endPos).append('\n').append("Successors:");
-        if (successors.isEmpty())
+        if (successors.isEmpty()) {
             sb.append(" None");
-        else {
+        } else {
             for (int i = 0; i < successors.size(); i++) {
                 BasicBlock succ = successors.get(i);
                 sb.append(" ").append(succ.id).append("[").append(System.identityHashCode(succ)).append("]");
             }
         }
         sb.append("\nHandlers:");
-        if (handlers.isEmpty())
+        if (handlers.isEmpty()) {
             sb.append(" None");
-        else {
+        } else {
             for (int i = 0; i < handlers.size(); i++) {
                 sb.append(" ").append(handlers.get(i).catchBB.id);
             }
@@ -1419,14 +1566,14 @@ public class BasicBlock implements Comparable<BasicBlock> {
         boolean isPausableJSR = false;
         if (sub != null) {
             ArrayList<BasicBlock> subBlocks = sub.getSubBlocks();
-            for (BasicBlock b: subBlocks) {
+            for (BasicBlock b : subBlocks) {
                 if (b.hasFlag(PAUSABLE)) {
                     isPausableJSR = true;
                     break;
                 }
             }
             if (isPausableJSR) {
-                for (BasicBlock b: subBlocks) {
+                for (BasicBlock b : subBlocks) {
                     b.setFlag(PAUSABLE_SUB);
                 }
             }
@@ -1434,10 +1581,12 @@ public class BasicBlock implements Comparable<BasicBlock> {
     }
 
     void changeJSR_RET_toGOTOs() throws KilimException {
-        int lastInsn = getInstruction(endPos).getOpcode(); 
+        int lastInsn = getInstruction(endPos).getOpcode();
         if (lastInsn == JSR) {
             BasicBlock targetBB = successors.get(0);
-            if (!targetBB.hasFlag(PAUSABLE_SUB)) return;
+            if (!targetBB.hasFlag(PAUSABLE_SUB)) {
+                return;
+            }
             changeLastInsnToGOTO(targetBB.startLabel);
             successors.clear();
             successors.add(targetBB);
@@ -1459,18 +1608,17 @@ public class BasicBlock implements Comparable<BasicBlock> {
         setInstruction(endPos, new JumpInsnNode(GOTO, label));
     }
 
-
     public boolean isGetCurrentTask() {
         AbstractInsnNode ain = getInstruction(startPos);
         if (ain.getOpcode() == INVOKESTATIC) {
-            MethodInsnNode min = (MethodInsnNode)ain;
+            MethodInsnNode min = (MethodInsnNode) ain;
             return min.owner.equals(TASK_CLASS) && min.name.equals("getCurrentTask");
         }
         return false;
     }
 
     boolean isInitialized() {
-        return startPos >= 0 && endPos >=0; 
+        return startPos >= 0 && endPos >= 0;
     }
 }
 

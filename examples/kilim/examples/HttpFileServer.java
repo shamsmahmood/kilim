@@ -6,6 +6,12 @@
 
 package kilim.examples;
 
+import kilim.Pausable;
+import kilim.http.HttpRequest;
+import kilim.http.HttpResponse;
+import kilim.http.HttpServer;
+import kilim.http.HttpSession;
+
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,17 +20,11 @@ import java.io.PrintStream;
 import java.nio.channels.FileChannel;
 import java.util.HashMap;
 
-import kilim.Pausable;
-import kilim.http.HttpRequest;
-import kilim.http.HttpResponse;
-import kilim.http.HttpServer;
-import kilim.http.HttpSession;
-
 /**
  * A simple file server over http
- * 
+ * <p/>
  * Usage: Run java kilim.examples.HttpFileServer [base directory name] From a browser, go to "http://localhost:7262".
- * 
+ * <p/>
  * A HttpFileServer object is a SessionTask, and is thus a thin wrapper over the socket connection. Its execute() method
  * is called once on connection establishment. The HttpRequest and HttpResponse objects are wrappers over a bytebuffer,
  * and unrelated to the socket. The request object is "filled in" by HttpSession.readRequest() and the response object
@@ -33,7 +33,7 @@ import kilim.http.HttpSession;
  * fully functioning file server.
  */
 public class HttpFileServer extends HttpSession {
-    public static File   baseDirectory;
+    public static File baseDirectory;
     public static String baseDirectoryName;
 
     public static void main(String[] args) throws IOException {
@@ -74,10 +74,11 @@ public class HttpFileServer extends HttpSession {
                     System.out.println("[" + this.id + "] Read: " + f.getPath());
                     if (check(resp, f)) {
                         boolean headOnly = req.method.equals("HEAD");
-                        if (f.isDirectory())
+                        if (f.isDirectory()) {
                             sendDirectory(resp, f, headOnly);
-                        else
+                        } else {
                             sendFile(resp, f, headOnly);
+                        }
                     }
                 } else {
                     super.problem(resp, HttpResponse.ST_FORBIDDEN, "Only GET and HEAD accepted");
@@ -101,7 +102,7 @@ public class HttpFileServer extends HttpSession {
     public boolean check(HttpResponse resp, File file) throws IOException, Pausable {
         byte[] status = HttpResponse.ST_OK;
         String msg = "";
-        
+
         if (!file.exists()) {
             status = HttpResponse.ST_NOT_FOUND;
             msg = "File Not Found: " + file.getName();
@@ -193,12 +194,12 @@ public class HttpFileServer extends HttpSession {
         if (!path.startsWith(baseDirectoryName)) {
             throw new SecurityException();
         }
-        path =  path.substring(baseDirectoryName.length()); // include the "/"
+        path = path.substring(baseDirectoryName.length()); // include the "/"
         return (path.length() == 0) ? "." : path;
     }
 
     public static HashMap<String, String> mimeTypes = new HashMap<String, String>();
-    
+
     static {
         mimeTypes.put("html", "text/html");
         mimeTypes.put("htm", "text/html");
@@ -289,9 +290,9 @@ public class HttpFileServer extends HttpSession {
     public static String mimeType(File file) {
         String name = file.getName();
         int dotpos = name.lastIndexOf('.');
-        if (dotpos == -1)
+        if (dotpos == -1) {
             return "text/plain";
-        else {
+        } else {
             String mimeType = mimeTypes.get(name.substring(dotpos + 1).toLowerCase());
             return (mimeType == null) ? "text/plain" : mimeType;
         }

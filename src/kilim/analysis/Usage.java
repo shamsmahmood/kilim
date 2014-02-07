@@ -14,12 +14,12 @@ import java.util.BitSet;
  * booleans, indexed by the local variable number. Since it is <i>very</i> rare for a method to have
  * more than 31 local variables, the vectors are represented by int bitmaps. For more than this, the
  * basic block creates an instance of BigUsage that is functionally identical (TODO)
- * 
+ * <p/>
  * Note that we don't need to track usage of operand stack. All elements of the operand stack are
  * always live, and always need to be stored and restored (during stack switching). This is not true
  * of local vars; a var may have a valid value which may not be used downstream, so we track which
  * vars must be taken seriously.
- * 
+ *
  * @see BasicBlock
  */
 public class Usage {
@@ -126,22 +126,23 @@ public class Usage {
     private void printBits(StringBuffer sb, BitSet b) {
         int numDefined = 0;
         for (int i = 0; i < nLocals; i++) {
-            if (b.get(i))
+            if (b.get(i)) {
                 numDefined++;
+            }
         }
         sb.append('(').append(numDefined).append("): ");
         for (int i = 0; i < nLocals; i++) {
-            if (b.get(i))
+            if (b.get(i)) {
                 sb.append(i).append(' ');
+            }
         }
         sb.append('\n');
     }
 
     /**
      * This is purely for testing purposes.
-     * 
-     * @param var
-     *            local var index
+     *
+     * @param var local var index
      */
     public void setLiveIn(int var) {
         in.set(var);

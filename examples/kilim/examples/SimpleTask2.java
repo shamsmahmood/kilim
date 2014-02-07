@@ -12,8 +12,8 @@ import kilim.Pausable;
 import kilim.Task;
 
 /**
- * A slight extension to SimpleTask. This 
- * 
+ * A slight extension to SimpleTask. This
+ * <p/>
  * [compile] javac -d ./classes SimpleTask2.java
  * [weave]   java kilim.tools.Weave -d ./classes kilim.examples.SimpleTask
  * [run]     java -cp ./classes:./classes:$CLASSPATH  kilim.examples.SimpleTask2
@@ -21,14 +21,14 @@ import kilim.Task;
 public class SimpleTask2 extends Task {
     static Mailbox<String> mb = new Mailbox<String>();
     static Mailbox<ExitMsg> exitmb = new Mailbox<ExitMsg>();
-    
+
     public static void main(String[] args) throws Exception {
         Task t = new SimpleTask2().start();
         t.informOnExit(exitmb);
         mb.putnb("Hello ");
         mb.putnb("World\n");
         mb.putnb("done");
-        
+
         exitmb.getb();
         System.exit(0);
     }
@@ -38,10 +38,12 @@ public class SimpleTask2 extends Task {
      * the thread ("pausable")
      */
 
-    public void execute() throws Pausable{
+    public void execute() throws Pausable {
         while (true) {
             String s = mb.get();
-            if (s.equals("done")) break;
+            if (s.equals("done")) {
+                break;
+            }
             System.out.print(s);
         }
         Task.exit(0); // Strictly optional.

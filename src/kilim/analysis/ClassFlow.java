@@ -5,38 +5,37 @@
  */
 package kilim.analysis;
 
-import kilim.*;
+import kilim.Constants;
+import kilim.KilimException;
 import kilim.mirrors.Detector;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+
 /**
  * This class reads a .class file (or stream), wraps each method with a MethodFlow object and optionally analyzes it.
- * 
  */
 public class ClassFlow extends ClassNode {
     ArrayList<MethodFlow> methodFlows;
-    ClassReader           cr;
-    String                classDesc;
+    ClassReader cr;
+    String classDesc;
     /**
      * true if any of the methods contained in the class file is pausable. ClassWeaver uses it later to avoid weaving if
      * isPausable isn't true.
      */
-    private boolean       isPausable;
+    private boolean isPausable;
 
     /**
      * true if the .class being read is already woven.
      */
-    public boolean        isWoven = false;
-    private Detector      detector;
+    public boolean isWoven = false;
+    private Detector detector;
 
     public ClassFlow(InputStream is, Detector detector) throws IOException {
         cr = new ClassReader(is);
@@ -53,17 +52,15 @@ public class ClassFlow extends ClassNode {
         this.detector = detector;
     }
 
-
     @Override
-    @SuppressWarnings( { "unchecked" })
+    @SuppressWarnings({"unchecked"})
     public MethodVisitor visitMethod(
             final int access,
             final String name,
             final String desc,
             final String signature,
-            final String[] exceptions)
-    {
-        MethodFlow mn = new MethodFlow( this, access, name,  desc, signature,
+            final String[] exceptions) {
+        MethodFlow mn = new MethodFlow(this, access, name, desc, signature,
                 exceptions, detector);
         super.methods.add(mn);
         return mn;
@@ -87,9 +84,9 @@ public class ClassFlow extends ClassNode {
                     break;
                 }
             }
-            if (isWoven && !forceAnalysis) 
-                return new ArrayList<MethodFlow>(); // This is a hack. 
-
+            if (isWoven && !forceAnalysis) {
+                return new ArrayList<MethodFlow>(); // This is a hack.
+            }
 
             cr = null; // We don't need this any more.
             classDesc = TypeDesc.getInterned("L" + name + ';');
@@ -100,12 +97,14 @@ public class ClassFlow extends ClassNode {
                     MethodFlow mf = (MethodFlow) o;
                     if (mf.isBridge()) {
                         MethodFlow mmf = getOrigWithSameSig(mf);
-                        if (mmf != null)
+                        if (mmf != null) {
                             mf.setPausable(mmf.isPausable());
+                        }
                     }
                     mf.verifyPausables();
-                    if (mf.isPausable())
+                    if (mf.isPausable()) {
                         isPausable = true;
+                    }
                     if ((mf.isPausable() || forceAnalysis) && (!mf.isAbstract())) {
                         mf.analyze();
                     }
@@ -128,13 +127,15 @@ public class ClassFlow extends ClassNode {
     private MethodFlow getOrigWithSameSig(MethodFlow bridgeMethod) {
         for (Object o : methods) {
             MethodFlow mf = (MethodFlow) o;
-            if (mf == bridgeMethod)
+            if (mf == bridgeMethod) {
                 continue;
+            }
             if (mf.name.equals(bridgeMethod.name)) {
                 String mfArgs = mf.desc.substring(0, mf.desc.indexOf(')'));
                 String bmArgs = bridgeMethod.desc.substring(0, bridgeMethod.desc.indexOf(')'));
-                if (mfArgs.equals(bmArgs))
+                if (mfArgs.equals(bmArgs)) {
                     return mf;
+                }
             }
         }
         return null;

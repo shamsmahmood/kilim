@@ -21,8 +21,9 @@ public class TestBasicBlock extends Base {
 
     private void checkSize(String methodName, int expectedSize) {
         MethodFlow f = getFlow(methodName);
-        if (f == null)
+        if (f == null) {
             return;
+        }
         if (f.getBasicBlocks().size() != expectedSize) {
             fail("Method " + methodName + ": expected flow size = "
                     + expectedSize + ", instead got "

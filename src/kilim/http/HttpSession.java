@@ -6,11 +6,11 @@ package kilim.http;
  * specified in the file "License"
  */
 
-import java.io.IOException;
-import java.io.OutputStream;
-
 import kilim.Pausable;
 import kilim.nio.SessionTask;
+
+import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * Responsible for creating an HTTPRequest object out of raw bytes from a socket, and for sending an HTTPResponse object
@@ -20,9 +20,8 @@ public class HttpSession extends SessionTask {
 
     /**
      * Reads the socket, parses the HTTP headers and the body (including chunks) into the req object.
-     * 
-     * @param req
-     *            . The HttpRequest object is reset before filling it in.
+     *
+     * @param req . The HttpRequest object is reset before filling it in.
      * @return the supplied request object. This is to encourage buffer reuse.
      * @throws IOException
      */
@@ -51,15 +50,15 @@ public class HttpSession extends SessionTask {
         resp.reuse();
     }
 
-    static byte[] pre  = "<html><body><p>".getBytes();
+    static byte[] pre = "<html><body><p>".getBytes();
     static byte[] post = "</body></html>".getBytes();
 
     /**
      * Send an error page to the client.
-     * 
-     * @param resp The response object. 
-     * @param statusCode See HttpResponse.ST*  
-     * @param htmlMsg  The body of the message that gives more detail. 
+     *
+     * @param resp       The response object.
+     * @param statusCode See HttpResponse.ST*
+     * @param htmlMsg    The body of the message that gives more detail.
      * @throws IOException
      * @throws Pausable
      */

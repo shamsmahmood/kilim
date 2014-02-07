@@ -10,6 +10,7 @@ public class IncompatibleTypesException extends Exception {
     public IncompatibleTypesException(String message) {
         super(message);
     }
+
     private static final long serialVersionUID = 1270645277746840738L;
- 
+
 }

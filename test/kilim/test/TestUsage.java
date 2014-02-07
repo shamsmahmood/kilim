@@ -6,14 +6,14 @@
 
 package kilim.test;
 
-import java.util.ArrayList;
-
-import kilim.analysis.Usage;
 import junit.framework.TestCase;
+import kilim.analysis.Usage;
+
+import java.util.ArrayList;
 
 public class TestUsage extends TestCase {
     /**
-     * Tests whether a bunch of reads and writes produces the appropriate live-in 
+     * Tests whether a bunch of reads and writes produces the appropriate live-in
      */
     public void testReadWrite() {
         Usage u = new Usage(4);
@@ -27,7 +27,7 @@ public class TestUsage extends TestCase {
         assertTrue(u.isLiveIn(2));
         assertFalse(u.isLiveIn(3));
     }
-    
+
     public void testChange() {
         Usage u = new Usage(31);
         Usage ufollow1 = new Usage(31);
@@ -39,11 +39,15 @@ public class TestUsage extends TestCase {
         //   29:in    29:not_in
         //   30:in    30:in
         // Expected usage.in :  28:in 29:in 30:not_in
-        u.read(29); u.write(30);
-        ufollow1.setLiveIn(28); ufollow1.setLiveIn(29); ufollow1.setLiveIn(30);
+        u.read(29);
+        u.write(30);
+        ufollow1.setLiveIn(28);
+        ufollow1.setLiveIn(29);
+        ufollow1.setLiveIn(30);
         ufollow2.setLiveIn(30);
         ArrayList<Usage> ua = new ArrayList<Usage>(2);
-        ua.add(ufollow1); ua.add(ufollow2);
+        ua.add(ufollow1);
+        ua.add(ufollow2);
         assertTrue(u.evalLiveIn(ua)); // should return changed == true
         for (int i = 0; i < 28; i++) {
             assertFalse(u.isLiveIn(i));

@@ -7,19 +7,24 @@ public class ExYieldDups extends ExYieldBase {
     public ExYieldDups(int test) {
         testCase = test;
     }
-    
+
     public void execute() throws Pausable {
         doPause = false;
         test();
         doPause = true;
         test();
     }
-    
+
     private void test() throws Pausable {
-        switch(testCase) {
-            case 0: testDupVars(); break;
-            case 1: testDupsInStack(); break;
-            default: throw new IllegalStateException("Unknown test case: " + testCase);
+        switch (testCase) {
+            case 0:
+                testDupVars();
+                break;
+            case 1:
+                testDupsInStack();
+                break;
+            default:
+                throw new IllegalStateException("Unknown test case: " + testCase);
         }
     }
 
@@ -29,8 +34,8 @@ public class ExYieldDups extends ExYieldBase {
         long l = fl;
         long dup_l = l;
         String s = fs;
-        String dup_s = s; 
-        if (doPause) { 
+        String dup_s = s;
+        if (doPause) {
             Task.sleep(50);
         }
         verify(d);
@@ -58,8 +63,7 @@ public class ExYieldDups extends ExYieldBase {
         verify(dup_l);
     }
 
-    
-    static void verify(long l, long dup_l, char c, char dup_c, float f , float dup_f) {
+    static void verify(long l, long dup_l, char c, char dup_c, float f, float dup_f) {
         verify(l);
         verify(dup_l);
         verify(c);

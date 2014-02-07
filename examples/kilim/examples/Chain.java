@@ -6,7 +6,10 @@
 
 package kilim.examples;
 
-import kilim.*;
+import kilim.Mailbox;
+import kilim.Pausable;
+import kilim.Task;
+
 /**
  * Set up a chain of tasks. Each task knows about its mailbox and
  * that of the next in the chain, but is not given the other tasks
@@ -15,22 +18,23 @@ import kilim.*;
  * mailbox, which writes "hello" into the buffer and passes the
  * modified StringBuffer on to the next task, and so on. The last
  * task appends "world", prints it out and exits.
- *
+ * <p/>
  * [compile] javac -d ./classes Chain.java
  * [weave]   java kilim.tools.Weave -d ./wclasses kilim.examples.Chain
  * [run]     java -cp ./wclasses:./classes:$CLASSPATH  kilim.examples.Chain
+ *
  * @author ram
  */
 public class Chain extends Task {
     Mailbox<StringBuffer> mymb, nextmb;
+
     public Chain(Mailbox<StringBuffer> mb, Mailbox<StringBuffer> next) {
-        mymb = mb; 
+        mymb = mb;
         nextmb = next;
     }
-    
 
-    public void execute() throws Pausable{
-        while(true) {
+    public void execute() throws Pausable {
+        while (true) {
             StringBuffer sb = mymb.get();
             if (nextmb == null) {
                 System.out.print(sb);
@@ -48,10 +52,10 @@ public class Chain extends Task {
         Mailbox<StringBuffer> mb = new Mailbox<StringBuffer>();
         Mailbox<StringBuffer> nextms = null;
         for (int i = 0; i < n; i++) {
-           new Chain(mb, nextms).start();
-           nextms = mb;
-           mb = new Mailbox<StringBuffer>();
+            new Chain(mb, nextms).start();
+            nextms = mb;
+            mb = new Mailbox<StringBuffer>();
         }
-        nextms.putnb(new StringBuffer());        
+        nextms.putnb(new StringBuffer());
     }
 }

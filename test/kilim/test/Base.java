@@ -6,20 +6,19 @@
 
 package kilim.test;
 
-import java.util.ArrayList;
-
 import junit.framework.TestCase;
 import kilim.analysis.BasicBlock;
 import kilim.analysis.ClassFlow;
 import kilim.analysis.MethodFlow;
 import kilim.mirrors.Detector;
-
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
+import java.util.ArrayList;
+
 public class Base extends TestCase {
     private static ArrayList<MethodFlow> stflows;
-    private static String                lastClassName = null;
+    private static String lastClassName = null;
 
     protected void cache(String className) throws Exception {
         if (lastClassName != className) {
@@ -62,8 +61,9 @@ public class Base extends TestCase {
 
     protected void checkCov(String methodName) {
         MethodFlow flow = getFlow(methodName);
-        if (flow == null)
+        if (flow == null) {
             return;
+        }
         ArrayList<BasicBlock> bbs = flow.getBasicBlocks();
         // Verify that all instructions are covered and that the only ones that
         // aren't are labelnodes. Also verify that there are no overlaps.

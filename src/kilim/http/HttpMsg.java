@@ -9,5 +9,5 @@ package kilim.http;
 import java.nio.ByteBuffer;
 
 public class HttpMsg {
-  ByteBuffer buffer;
+    ByteBuffer buffer;
 }

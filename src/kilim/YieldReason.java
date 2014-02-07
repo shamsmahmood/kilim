@@ -11,6 +11,7 @@ public class YieldReason implements PauseReason {
         // Since a yield is not a reason to continue pausing, return false
         return false;
     }
+
     @Override
     public String toString() {
         return "yield";

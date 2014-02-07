@@ -7,7 +7,7 @@ public class ExYieldConstants extends ExYieldBase {
     public ExYieldConstants(int test) {
         testCase = test;
     }
-    
+
     public void execute() throws Pausable {
         doPause = false;
         testConstants();
@@ -16,23 +16,23 @@ public class ExYieldConstants extends ExYieldBase {
     }
 
     void testConstants() throws Pausable {
-    	double d0 = 0;
-    	double d1 = 1;
-    	double d = 10.0;
-    	int i0 = 0;
-    	long l0 = 0;
-    	long l1 = 1;
-    	long l = 10;
-    	int i1 = 1;
-    	int i2 = 2;
-    	int i3 = 3;
-    	int i4 = 4;
-    	int i5 = 5;
-    	float f0 = 0;
-    	float f1 = 1;
-    	int i = 10;
-    	String s = "10";
-        if (doPause) { 
+        double d0 = 0;
+        double d1 = 1;
+        double d = 10.0;
+        int i0 = 0;
+        long l0 = 0;
+        long l1 = 1;
+        long l = 10;
+        int i1 = 1;
+        int i2 = 2;
+        int i3 = 3;
+        int i4 = 4;
+        int i5 = 5;
+        float f0 = 0;
+        float f1 = 1;
+        int i = 10;
+        String s = "10";
+        if (doPause) {
             Task.sleep(50);
         }
         pausable_st(d, s, l, doPause);

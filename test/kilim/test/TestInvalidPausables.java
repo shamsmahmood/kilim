@@ -21,37 +21,40 @@ public class TestInvalidPausables extends TestCase {
             fail(e.toString());
         }
     }
+
     public void testWeaveConstructor() {
         ensureException("kilim.test.ex.ExInvalidConstructor");
     }
+
     public void testWeaveSynchronized() {
         ensureException("kilim.test.ex.ExInvalidSynchronized");
         ensureException("kilim.test.ex.ExInvalidSynchronized1");
     }
+
     public void testWeaveStatic() {
         ensureException("kilim.test.ex.ExInvalidStaticBlock");
     }
-    
+
     public void testWeaveMethod() {
         ensureException("kilim.test.ex.ExInvalidCallP_NP");
     }
 
     public void testWeaveSuperPausable() {
         ensureException("kilim.test.ex.ExInvalidNPDerived");
-        
+
     }
-    
+
     public void testWeaveSuperNotPausable() {
         ensureException("kilim.test.ex.ExInvalidPDerived");
     }
-    
+
     public void testWeaveInterfacePausable() {
         ensureException("kilim.test.ex.ExInvalidPImp");
-        
+
     }
-    
+
     public void testWeaveInterfaceNotPausable() {
         ensureException("kilim.test.ex.ExInvalidNPImp");
-        
+
     }
 }

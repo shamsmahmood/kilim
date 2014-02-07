@@ -5,29 +5,25 @@
  */
 package kilim.mirrors;
 
-import static kilim.Constants.D_OBJECT;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
-
 import kilim.Constants;
 import kilim.NotPausable;
 import kilim.Pausable;
 import kilim.analysis.AsmDetector;
 
+import java.util.ArrayList;
+
+import static kilim.Constants.D_OBJECT;
+
 /**
  * Utility class to check if a method has been marked pausable
- * 
  */
 public class Detector {
     public static final int METHOD_NOT_FOUND_OR_PAUSABLE = 0; // either not found, or not pausable if found.
     public static final int PAUSABLE_METHOD_FOUND = 1; // known to be pausable
     public static final int METHOD_NOT_PAUSABLE = 2; // known to be not pausable
-    
 
     // Note that we don't have the kilim package itself in the following list.
-    static final String[] STANDARD_DONT_CHECK_LIST = { "java.", "javax." };
+    static final String[] STANDARD_DONT_CHECK_LIST = {"java.", "javax."};
 
     public static final Detector DEFAULT = new Detector(new RuntimeClassMirrors());
 
@@ -53,28 +49,29 @@ public class Detector {
      */
 
     static boolean isNonPausableClass(String className) {
-        return className == null || className.charAt(0) == '[' || 
-           className.startsWith("java.") || className.startsWith("javax.");
+        return className == null || className.charAt(0) == '[' ||
+                className.startsWith("java.") || className.startsWith("javax.");
     }
-    
+
     static boolean isNonPausableMethod(String methodName) {
         return methodName.endsWith("init>");
     }
 
-    
     public int getPausableStatus(String className, String methodName, String desc) {
         int ret = METHOD_NOT_FOUND_OR_PAUSABLE;
         // array methods (essentially methods deferred to Object (clone, wait etc)
         // and constructor methods are not pausable
         if (isNonPausableClass(className) || isNonPausableMethod(methodName)) {
-            return METHOD_NOT_FOUND_OR_PAUSABLE; 
+            return METHOD_NOT_FOUND_OR_PAUSABLE;
         }
         className = className.replace('/', '.');
         try {
             MethodMirror m = findPausableMethod(className, methodName, desc);
             if (m != null) {
                 for (String ex : m.getExceptionTypes()) {
-                    if (isNonPausableClass(ex)) continue;
+                    if (isNonPausableClass(ex)) {
+                        continue;
+                    }
                     ClassMirror c = classForName(ex);
                     if (NOT_PAUSABLE.isAssignableFrom(c)) {
                         return METHOD_NOT_PAUSABLE;
@@ -112,37 +109,47 @@ public class Detector {
 
     private MethodMirror findPausableMethod(String className, String methodName, String desc)
             throws ClassMirrorNotFoundException {
-        
-        if (isNonPausableClass(className) || isNonPausableMethod(methodName)) 
+
+        if (isNonPausableClass(className) || isNonPausableMethod(methodName)) {
             return null;
+        }
 
         ClassMirror cl = classForName(className);
-        if (cl == null) return null;
-        
+        if (cl == null) {
+            return null;
+        }
+
         for (MethodMirror om : cl.getDeclaredMethods()) {
             if (om.getName().equals(methodName)) {
                 // when comparing descriptors only compare arguments, not return types
-                String omDesc= om.getMethodDescriptor();
-            
-                if (omDesc.substring(0,omDesc.indexOf(")")).equals(desc.substring(0,desc.indexOf(")")))) {
-                    if (om.isBridge())  continue;
+                String omDesc = om.getMethodDescriptor();
+
+                if (omDesc.substring(0, omDesc.indexOf(")")).equals(desc.substring(0, desc.indexOf(")")))) {
+                    if (om.isBridge()) {
+                        continue;
+                    }
                     return om;
                 }
             }
         }
 
-        if (OBJECT.equals(cl))
+        if (OBJECT.equals(cl)) {
             return null;
+        }
 
         MethodMirror m = findPausableMethod(cl.getSuperclass(), methodName, desc);
-        if (m != null)
+        if (m != null) {
             return m;
-        
+        }
+
         for (String ifname : cl.getInterfaces()) {
-            if (isNonPausableClass(ifname)) continue;
+            if (isNonPausableClass(ifname)) {
+                continue;
+            }
             m = findPausableMethod(ifname, methodName, desc);
-            if (m != null)
+            if (m != null) {
                 return m;
+            }
         }
         return null;
     }
@@ -152,14 +159,14 @@ public class Detector {
     @SuppressWarnings("unused")
     private static String statusToStr(int st) {
         switch (st) {
-        case METHOD_NOT_FOUND_OR_PAUSABLE:
-            return "not found or pausable";
-        case PAUSABLE_METHOD_FOUND:
-            return "pausable";
-        case METHOD_NOT_PAUSABLE:
-            return "not pausable";
-        default:
-            throw new AssertionError("Unknown status");
+            case METHOD_NOT_FOUND_OR_PAUSABLE:
+                return "not found or pausable";
+            case PAUSABLE_METHOD_FOUND:
+                return "pausable";
+            case METHOD_NOT_PAUSABLE:
+                return "not pausable";
+            default:
+                throw new AssertionError("Unknown status");
         }
     }
 
@@ -167,8 +174,9 @@ public class Detector {
 
     public static Detector getDetector() {
         Detector d = DETECTOR.get();
-        if (d == null)
+        if (d == null) {
             return Detector.DEFAULT;
+        }
         return d;
     }
 
@@ -185,10 +193,12 @@ public class Detector {
         try {
             ClassMirror ca = classForName(a);
             ClassMirror cb = classForName(b);
-            if (ca.isAssignableFrom(cb))
+            if (ca.isAssignableFrom(cb)) {
                 return oa;
-            if (cb.isAssignableFrom(ca))
+            }
+            if (cb.isAssignableFrom(ca)) {
                 return ob;
+            }
             if (ca.isInterface() && cb.isInterface()) {
                 return "java/lang/Object"; // This is what the java bytecode verifier does
             }
@@ -197,9 +207,9 @@ public class Detector {
         }
 
         if (a.equals(b)) {
-        	return oa;
+            return oa;
         }
-        
+
         ArrayList<String> sca = getSuperClasses(a);
         ArrayList<String> scb = getSuperClasses(b);
         int lasta = sca.size() - 1;
@@ -212,15 +222,16 @@ public class Detector {
                 break;
             }
         } while (lasta >= 0 && lastb >= 0);
-        
-        if (sca.size() == lasta+1) {
-        	return "java/lang/Object";
+
+        if (sca.size() == lasta + 1) {
+            return "java/lang/Object";
         }
-        
+
         return sca.get(lasta + 1).replace('.', '/');
     }
 
     final private static ArrayList<String> EMPTY_STRINGS = new ArrayList<String>(0);
+
     public ArrayList<String> getSuperClasses(String name) throws ClassMirrorNotFoundException {
         if (name == null) {
             return EMPTY_STRINGS;
@@ -240,10 +251,11 @@ public class Detector {
     }
 
     private static String toClassName(String s) {
-    	if (s.endsWith(";"))
-    		return s.replace('/', '.').substring(1, s.length() - 1);
-    	else
-    		return s.replace('/', '.');
+        if (s.endsWith(";")) {
+            return s.replace('/', '.').substring(1, s.length() - 1);
+        } else {
+            return s.replace('/', '.');
+        }
     }
 
     static String JAVA_LANG_OBJECT = "java.lang.Object";

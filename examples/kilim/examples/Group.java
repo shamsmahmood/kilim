@@ -18,7 +18,7 @@ public class Group {
         tg.joinb();
         System.exit(0);
     }
-    
+
     static class GroupTask extends Task {
         public void execute() throws Pausable {
             System.out.println("Task #" + id + "sleeping");

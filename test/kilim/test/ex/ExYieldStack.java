@@ -8,22 +8,33 @@ public class ExYieldStack extends ExYieldBase {
     public ExYieldStack(int test) {
         testCase = test;
     }
-    
+
     public void execute() throws Pausable {
         doPause = false;
         test();
         doPause = true;
         test();
     }
-    
+
     private void test() throws Pausable {
         switch (testCase) {
-            case 0: testStackBottom_st(); break;
-            case 1: testStackBottom_v(); break;
-            case 2: testStackBottom_av(); break;
-            case 3: testFactorial_st(); break;
-            case 4: testFactorial_av(); break;
-            default: new IllegalStateException("Unknown testCase " + testCase);
+            case 0:
+                testStackBottom_st();
+                break;
+            case 1:
+                testStackBottom_v();
+                break;
+            case 2:
+                testStackBottom_av();
+                break;
+            case 3:
+                testFactorial_st();
+                break;
+            case 4:
+                testFactorial_av();
+                break;
+            default:
+                new IllegalStateException("Unknown testCase " + testCase);
         }
     }
 
@@ -44,7 +55,7 @@ public class ExYieldStack extends ExYieldBase {
     void testStackBottom_av() throws Pausable {
         verify(fd, fs, fl, fa, new ExYieldStack(testCase).pausable_v(10));
     }
-    
+
     // test a deep hierarchy that makes the state stack grow, have
     // long parameters and return values, and pause in the middle
     // of the computation so it is saves longs on the stack
@@ -54,26 +65,30 @@ public class ExYieldStack extends ExYieldBase {
             throw new RuntimeException("Incorrect factorial, n =" + n);
         }
     }
-    
+
     // Issue 8 on github
     void testLoop() throws Pausable {
         // The other tests don't test constant propagation, but not dynamic operands
         // on stack.
-        
+
     }
-    
+
     static long fact_st(long n, boolean doPause) throws Pausable {
 //        System.out.println("n = " + n + ", doPause = " + doPause);
         if (n == 1) {
-            if (doPause) Task.sleep(10);
+            if (doPause) {
+                Task.sleep(10);
+            }
             return 1L;
-        } 
+        }
         if (n == 10) {
             // Initial state stack is 10 elements long, so it is worth
             // testing a pause here. 
-            if (doPause) Task.sleep(10);
+            if (doPause) {
+                Task.sleep(10);
+            }
         }
-        return n * fact_st(n-1, doPause);
+        return n * fact_st(n - 1, doPause);
     }
 
     void testFactorial_av() throws Pausable {
@@ -82,18 +97,22 @@ public class ExYieldStack extends ExYieldBase {
             throw new RuntimeException("Incorrect factorial, n =" + n);
         }
     }
-    
+
     long fact_av(long n, boolean doPause) throws Pausable {
         if (n == 1) {
-            if (doPause) Task.sleep(50);
+            if (doPause) {
+                Task.sleep(50);
+            }
             return 1L;
-        } 
+        }
         if (n == 10) {
             // Initial state stack is 10 elements long, so it is worth
             // testing a pause here. 
-            if (doPause) Task.sleep(50);
+            if (doPause) {
+                Task.sleep(50);
+            }
         }
-        return n * new ExYieldStack(testCase).fact_av(n-1, doPause);
+        return n * new ExYieldStack(testCase).fact_av(n - 1, doPause);
     }
 
     static float pausable_st(int i, boolean doPause) throws Pausable {
@@ -116,21 +135,20 @@ public class ExYieldStack extends ExYieldBase {
         verify(al);
         verify((String[][]) aa);
     }
-    
+
     void dummySyncTest() throws Pausable {
         // just making sure that the weaver doesn't barf if we call
         // call a pausable function from _outside_ a synchronized block.
-        synchronized(this) {
+        synchronized (this) {
             notify(); // dummy non-pausable method in a sync block
         }
-        
+
         pausable_st(0, false);
 
-        synchronized(this) {
+        synchronized (this) {
             notify(); // dummy non-pausable method in a sync block
         }
-        
+
     }
-    
-    
+
 }

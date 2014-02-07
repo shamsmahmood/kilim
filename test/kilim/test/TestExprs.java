@@ -6,15 +6,15 @@
 
 package kilim.test;
 
-
 /**
  * An attempt to exercise all the bytecode associated with primitive
- * types (loading/storing from registers, array operations, arithmetic operations etc.) 
+ * types (loading/storing from registers, array operations, arithmetic operations etc.)
  */
 public class TestExprs extends Base {
     public void testInts() throws Exception {
         cache("kilim.test.ex.ExInts");
     }
+
     public void testLongs() throws Exception {
         cache("kilim.test.ex.ExLongs");
     }

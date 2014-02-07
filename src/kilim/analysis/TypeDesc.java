@@ -6,32 +6,19 @@
 
 package kilim.analysis;
 
-import static kilim.Constants.D_BOOLEAN;
-import static kilim.Constants.D_BYTE;
-import static kilim.Constants.D_CHAR;
-import static kilim.Constants.D_DOUBLE;
-import static kilim.Constants.D_FLOAT;
-import static kilim.Constants.D_INT;
-import static kilim.Constants.D_LONG;
-import static kilim.Constants.D_NULL;
-import static kilim.Constants.D_OBJECT;
-import static kilim.Constants.D_SHORT;
-import static kilim.Constants.D_STRING;
-import static kilim.Constants.D_UNDEFINED;
+import kilim.Constants;
+import kilim.mirrors.ClassMirrorNotFoundException;
+import kilim.mirrors.Detector;
+import org.objectweb.asm.Type;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
 
-import kilim.Constants;
-import kilim.mirrors.ClassMirrorNotFoundException;
-import kilim.mirrors.Detector;
-
-import org.objectweb.asm.Type;
+import static kilim.Constants.*;
 
 /**
  * A utility class that provides static methods for interning type strings and merging type
  * descriptors.
- * 
  */
 public class TypeDesc {
     static final HashMap<String, String> knownTypes = new HashMap<String, String>(30);
@@ -61,11 +48,11 @@ public class TypeDesc {
         String ret = knownTypes.get(desc);
         if (ret == null) {
             switch (desc.charAt(0)) {
-            case 'L':
-            case '[':
-                return desc;
-            default:
-                return "L" + desc + ';';
+                case 'L':
+                case '[':
+                    return desc;
+                default:
+                    return "L" + desc + ';';
             }
         } else {
             return ret;
@@ -88,43 +75,51 @@ public class TypeDesc {
     }
 
     public static String getTypeDesc(Object object) {
-        if (object instanceof Integer)
+        if (object instanceof Integer) {
             return D_INT;
-        if (object instanceof Long)
+        }
+        if (object instanceof Long) {
             return D_LONG;
-        if (object instanceof Float)
+        }
+        if (object instanceof Float) {
             return D_FLOAT;
-        if (object instanceof Double)
+        }
+        if (object instanceof Double) {
             return D_DOUBLE;
-        if (object instanceof String)
+        }
+        if (object instanceof String) {
             return D_STRING;
-        if (object instanceof Boolean)
+        }
+        if (object instanceof Boolean) {
             return D_BOOLEAN;
-        if (object instanceof Type)
+        }
+        if (object instanceof Type) {
             return TypeDesc.getInterned(((Type) object).getDescriptor());
+        }
         throw new InternalError("Unrecognized ldc constant: " + object);
     }
 
     private static int typelen(char[] buf, int off) {
         int start = off;
         switch (buf[off]) {
-        case 'L':
-            while (buf[off++] != ';') {}
-            return off - start;
-        case 'B':
-        case 'C':
-        case 'D':
-        case 'F':
-        case 'I':
-        case 'J':
-        case 'S':
-        case 'Z':
-        case 'V':
-            return 1;
-        case '[':
-            return typelen(buf, off + 1) + 1;
-        default:
-            throw new InternalError("Unknown descriptor type");
+            case 'L':
+                while (buf[off++] != ';') {
+                }
+                return off - start;
+            case 'B':
+            case 'C':
+            case 'D':
+            case 'F':
+            case 'I':
+            case 'J':
+            case 'S':
+            case 'Z':
+            case 'V':
+                return 1;
+            case '[':
+                return typelen(buf, off + 1) + 1;
+            default:
+                throw new InternalError("Unknown descriptor type");
         }
     }
 
@@ -169,10 +164,12 @@ public class TypeDesc {
 
     public static String mergeType(String a, String b) throws IncompatibleTypesException {
         // given: a and b are different.
-        if (a == D_UNDEFINED)
+        if (a == D_UNDEFINED) {
             return b;
-        if (b == D_UNDEFINED)
+        }
+        if (b == D_UNDEFINED) {
             return a;
+        }
         char ac = a.charAt(0);
         char bc = b.charAt(0);
         if (a == D_NULL) {
@@ -185,51 +182,53 @@ public class TypeDesc {
                     + a;
             return a;
         }
-        if (a == b || a.equals(b))
+        if (a == b || a.equals(b)) {
             return a;
+        }
         switch (ac) {
-        case 'N': // D_NULL
-            if (bc == 'L')
-                return b;
-            break;
-        case 'L':
-            if (bc == 'L') {
-                return commonSuperType(a, b);
-            } else if (bc == 'N') {
-                return a;
-            } else if (bc == '[') {
-                return D_OBJECT; // common supertype of Ref and ArrayRef
-            }
-            break;
-        case '[':
-            if (bc == '[') {
-                try {
-                    return "["
-                            + mergeType(TypeDesc.getComponentType(a), TypeDesc.getComponentType(b));
-                } catch (IncompatibleTypesException ite) {
-                    // The component types are incompatible, but two disparate arrays still
-                    // inherit from Object
-                    return D_OBJECT;
+            case 'N': // D_NULL
+                if (bc == 'L') {
+                    return b;
                 }
-            } else if (bc == 'L') {
-                return D_OBJECT; // common supertype of Ref and ArrayRef
-            }
-            break;
-        case 'I':
-        case 'Z':
-        case 'B':
-        case 'C':
-        case 'S':
-            // all int types are interchangeable
-            switch (bc) {
+                break;
+            case 'L':
+                if (bc == 'L') {
+                    return commonSuperType(a, b);
+                } else if (bc == 'N') {
+                    return a;
+                } else if (bc == '[') {
+                    return D_OBJECT; // common supertype of Ref and ArrayRef
+                }
+                break;
+            case '[':
+                if (bc == '[') {
+                    try {
+                        return "["
+                                + mergeType(TypeDesc.getComponentType(a), TypeDesc.getComponentType(b));
+                    } catch (IncompatibleTypesException ite) {
+                        // The component types are incompatible, but two disparate arrays still
+                        // inherit from Object
+                        return D_OBJECT;
+                    }
+                } else if (bc == 'L') {
+                    return D_OBJECT; // common supertype of Ref and ArrayRef
+                }
+                break;
             case 'I':
             case 'Z':
             case 'B':
             case 'C':
             case 'S':
-                return D_INT;
-            }
-            break;
+                // all int types are interchangeable
+                switch (bc) {
+                    case 'I':
+                    case 'Z':
+                    case 'B':
+                    case 'C':
+                    case 'S':
+                        return D_INT;
+                }
+                break;
         }
         throw new IncompatibleTypesException("" + a + "," + b);
     }
@@ -239,17 +238,20 @@ public class TypeDesc {
     // public for testing purposes
     public static String commonSuperType(String oa, String ob) {
         try {
-            if (oa == D_OBJECT || ob == D_OBJECT)
+            if (oa == D_OBJECT || ob == D_OBJECT) {
                 return D_OBJECT;
-            if (oa.equals(ob))
+            }
+            if (oa.equals(ob)) {
                 return oa;
+            }
 
             String lub = Detector.getDetector()
-            		.commonSuperType(getInternalName(oa), 
-            						 getInternalName(ob));
+                    .commonSuperType(getInternalName(oa),
+                            getInternalName(ob));
 
-            if (lub.equals("java/lang/Object"))
-            	return D_OBJECT;
+            if (lub.equals("java/lang/Object")) {
+                return D_OBJECT;
+            }
             return "L" + lub + ";";
 
         } catch (ClassMirrorNotFoundException cnfe) {

@@ -6,10 +6,6 @@
 
 package kilim.examples;
 
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.PrintWriter;
-
 import kilim.Pausable;
 import kilim.http.HttpRequest;
 import kilim.http.HttpResponse;
@@ -17,20 +13,24 @@ import kilim.http.HttpServer;
 import kilim.http.HttpSession;
 import kilim.http.KeyValues;
 
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.PrintWriter;
+
 /**
  * A basic HTTP server that merely echoes the path and the query string supplied to it in a GET request
- * 
- * Usage: Run java kilim.examples.HttpFileServer [base directory name] 
- * 
+ * <p/>
+ * Usage: Run java kilim.examples.HttpFileServer [base directory name]
+ * <p/>
  * From a browser, try "http://localhost:7262/hello", "http://localhost:7262/buy?code=200&desc=Rolls%20Royce">"
- * 
+ * <p/>
  * SimpleHttpSession is an HTTPSession task, itself a thin wrapper over the socket connection. An instance of this
- * task is launched for each new connection, and its execute method is called when the task is scheduled. 
- *
- * <p>
+ * task is launched for each new connection, and its execute method is called when the task is scheduled.
+ * <p/>
+ * <p/>
  * The HttpRequest and HttpResponse objects are wrappers over a bytebuffer,
  * and unrelated to the socket. The request object is "filled in" by HttpSession.readRequest() and the response object
- * is sent by HttpSession.sendResponse(). 
+ * is sent by HttpSession.sendResponse().
  */
 
 public class SimpleHttpServer {
@@ -40,7 +40,7 @@ public class SimpleHttpServer {
         System.out.println("SimpleHttpServer listening on http://localhost:7262");
         System.out.println("From a browser, try http://localhost:7262/hello\n or http://localhost:7262/buy?code=200&desc=Rolls%20Royce");
     }
-    
+
     public static class SimpleHttpSession extends HttpSession {
 
         @Override
@@ -69,9 +69,10 @@ public class SimpleHttpServer {
                     } else {
                         super.problem(resp, HttpResponse.ST_FORBIDDEN, "Only GET and HEAD accepted");
                     }
-                    
-                    if (!req.keepAlive()) 
+
+                    if (!req.keepAlive()) {
                         break;
+                    }
                     break;
                 }
             } catch (EOFException e) {

@@ -21,7 +21,6 @@ package kilim;
  * integers (its name is indicative of this aspect) and is used
  * as a canonical class to store any activation frame that needs
  * to store two objects and three ints.
- *  
  */
 
 public class State {

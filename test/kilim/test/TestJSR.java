@@ -6,10 +6,10 @@
 
 package kilim.test;
 
-import java.util.ArrayList;
-
 import kilim.analysis.BasicBlock;
 import kilim.analysis.MethodFlow;
+
+import java.util.ArrayList;
 
 public class TestJSR extends Base {
     public void testJSRSizes() throws Exception {
@@ -31,10 +31,10 @@ public class TestJSR extends Base {
         flow = getFlow("pausableJSR2");
         ArrayList<BasicBlock> bbs = flow.getBasicBlocks();
         assertEquals(7, bbs.size());
-        
+
         // make sure the blocks are unique
         int flag = 1 << 12;
-        for (BasicBlock bb: bbs) {
+        for (BasicBlock bb : bbs) {
             assertFalse("BasicBlock list contains duplicates", bb.hasFlag(flag));
             bb.setFlag(flag);
         }

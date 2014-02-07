@@ -1,14 +1,14 @@
 package kilim;
 
+import kilim.analysis.ClassInfo;
+import kilim.analysis.FileLister;
+import kilim.tools.Weaver;
+
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import kilim.analysis.ClassInfo;
-import kilim.analysis.FileLister;
-import kilim.tools.Weaver;
 
 /**
  * Classloader that loads classes from the classpath spec given by the system property
@@ -22,7 +22,7 @@ public class WeavingClassLoader extends KilimClassLoader {
     ArrayList<FileLister> fileContainers;
     /**
      * Weaver instance. There is a mutually recursive dependency between the weaver and
-     * this class loader. See {@link #findClass(String)}  
+     * this class loader. See {@link #findClass(String)}
      */
     Weaver weaver;
 
@@ -33,8 +33,9 @@ public class WeavingClassLoader extends KilimClassLoader {
         fileContainers = new ArrayList<FileLister>(classPaths.length);
         for (String name : classPaths) {
             name = name.trim();
-            if (name.equals(""))
+            if (name.equals("")) {
                 continue;
+            }
             try {
                 fileContainers.add(new FileLister(name));
             } catch (IOException ioe) {
@@ -45,24 +46,26 @@ public class WeavingClassLoader extends KilimClassLoader {
         weaver = new Weaver(this); // mutually recursive dependency.
     }
 
-    
     /**
-     * Check if class file exists in kilim.class.path. 
+     * Check if class file exists in kilim.class.path.
      */
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
         Class<?> ret = null;
         for (FileLister container : fileContainers) {
             try {
-                String classFileName = name.replace('.', File.separatorChar) + ".class"; 
+                String classFileName = name.replace('.', File.separatorChar) + ".class";
                 FileLister.Entry fe = container.open(classFileName);
-                if (fe == null) continue;
+                if (fe == null) {
+                    continue;
+                }
                 byte[] code = readFully(fe);
                 List<ClassInfo> cis = weaver.weave(new ClassInfo(name, code));
 
                 for (ClassInfo ci : cis) {
-                    if (findLoadedClass(ci.className) != null)
+                    if (findLoadedClass(ci.className) != null) {
                         continue;
+                    }
                     Class<?> c = super.defineClass(ci.className, ci.bytes, 0, ci.bytes.length);
                     if (ci.className.equals(name)) {
                         ret = c;
@@ -91,7 +94,7 @@ public class WeavingClassLoader extends KilimClassLoader {
 
     private static byte[] readFully(FileLister.Entry fe) throws IOException {
         DataInputStream in = new DataInputStream(fe.getInputStream());
-        byte[] contents = new byte[(int)fe.getSize()];
+        byte[] contents = new byte[(int) fe.getSize()];
         in.readFully(contents);
         in.close();
         return contents;

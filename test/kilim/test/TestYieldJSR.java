@@ -9,7 +9,7 @@ package kilim.test;
 import junit.framework.TestCase;
 
 public class TestYieldJSR extends TestCase {
- 
+
     /*
      * Ordinary jsr call. No inlining should happen
      */
@@ -32,7 +32,7 @@ public class TestYieldJSR extends TestCase {
     public void testMultiplePausableJSRs() throws Exception {
         TestYield.runTask("kilim.test.ex.ExYieldSub", 2);
     }
-    
+
     /* jsr sub1, jsr sub2, jsr sub1, jsr sub2, where sub2 is pausable
      * and sub1 is not. Only calls to sub2 should be inlined. We have
      * no automated way of checking this, but the behavior can certainly

@@ -8,7 +8,7 @@ import kilim.ReentrantLock;
 import kilim.Scheduler;
 import kilim.Task;
 
-public class TestLock extends TestCase{
+public class TestLock extends TestCase {
     public void testLocks() {
         Scheduler scheduler = new Scheduler(4);
         Mailbox<ExitMsg> mb = new Mailbox<ExitMsg>();
@@ -23,24 +23,26 @@ public class TestLock extends TestCase{
             ExitMsg em = mb.getb(5000);
             assertNotNull("Timed out. #tasks finished = " + i + "/100", em);
             if (em.result instanceof Exception) {
-                ok = false; break;
+                ok = false;
+                break;
             }
         }
         scheduler.shutdown();
         assertTrue(ok);
     }
-    
+
     static class LockTask extends Task {
         ReentrantLock syncLock = new ReentrantLock();
+
         @Override
         public void execute() throws Pausable, Exception {
 //            System.out.println("Start #" + id);
             try {
-            for (int i = 0; i < 1000; i++) {
-                syncLock.lock();
-                Task.yield();
-                syncLock.unlock();
-            }
+                for (int i = 0; i < 1000; i++) {
+                    syncLock.lock();
+                    Task.yield();
+                    syncLock.unlock();
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }

@@ -6,13 +6,13 @@
 
 package kilim.http;
 
+import kilim.Pausable;
+import kilim.nio.EndPoint;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
-
-import kilim.Pausable;
-import kilim.nio.EndPoint;
 
 /**
  * This object encapsulates a bytebuffer (via HttpMsg). HttpRequestParser creates an instance of this object, but only
@@ -33,7 +33,7 @@ public class HttpRequest extends HttpMsg {
      */
     public String uriPath;
 
-    public int    nFields;
+    public int nFields;
     /**
      * Keys present in the HTTP header
      */
@@ -41,26 +41,27 @@ public class HttpRequest extends HttpMsg {
 
     // range variables encode the offset and length within the header. The strings corresponding
     // to these variables are created lazily.
-    public int    versionRange;
-    public int    uriFragmentRange;
-    public int    queryStringRange;
-    public int[]  valueRanges;
+    public int versionRange;
+    public int uriFragmentRange;
+    public int queryStringRange;
+    public int[] valueRanges;
 
-    public int    contentOffset;
-    public int    contentLength;
+    public int contentOffset;
+    public int contentLength;
 
     /**
      * The read cursor, used in the read* methods.
      */
-    public int    iread;
+    public int iread;
 
     public HttpRequest() {
         keys = new String[5];
         valueRanges = new int[5];
     }
 
-    /** 
+    /**
      * Get the value for a given key
+     *
      * @param key
      * @return null if the key is not present in the header.
      */
@@ -74,16 +75,16 @@ public class HttpRequest extends HttpMsg {
     }
 
     /**
-     * @return the query part of the URI. 
+     * @return the query part of the URI.
      */
     public String getQuery() {
         return extractRange(queryStringRange);
     }
-    
+
     public String version() {
         return extractRange(versionRange);
     }
-    
+
     public boolean keepAlive() {
         return isOldHttp() ? "Keep-Alive".equals(getHeader("Connection;")) : !("close".equals(getHeader("Connection")));
     }
@@ -91,13 +92,15 @@ public class HttpRequest extends HttpMsg {
     public KeyValues getQueryComponents() {
         String q = getQuery();
         int len = q.length();
-        if (q == null || len == 0)
+        if (q == null || len == 0) {
             return new KeyValues(0);
+        }
 
         int numPairs = 0;
         for (int i = 0; i < len; i++) {
-            if (q.charAt(i) == '=')
+            if (q.charAt(i) == '=') {
                 numPairs++;
+            }
         }
         KeyValues components = new KeyValues(numPairs);
 
@@ -106,11 +109,12 @@ public class HttpRequest extends HttpMsg {
         boolean url_encoded = false;
         for (int i = 0; i <= len; i++) {
             char c = (i == len) ? '&' // pretending there's an artificial marker at the end of the string, to capture
-                                      // the last component
+                    // the last component
                     : q.charAt(i);
 
-            if (c == '+' || c == '%')
+            if (c == '+' || c == '%') {
                 url_encoded = true;
+            }
             if (c == '=' || c == '&') {
                 String comp = q.substring(beg, i);
                 if (url_encoded) {
@@ -158,7 +162,7 @@ public class HttpRequest extends HttpMsg {
     }
 
     /**
-     * Clear the request object so that it can be reused for the next message. 
+     * Clear the request object so that it can be reused for the next message.
      */
     public void reuse() {
         method = null;
@@ -177,7 +181,6 @@ public class HttpRequest extends HttpMsg {
         nFields = 0;
     }
 
-    
     /*
      * Internal methods 
      */
@@ -231,7 +234,6 @@ public class HttpRequest extends HttpMsg {
         nFields++;
     }
 
-
     // complement of HttpRequestParser.encodeRange
     public String extractRange(int range) {
         int beg = range >> 16;
@@ -242,7 +244,6 @@ public class HttpRequest extends HttpMsg {
     public String extractRange(int beg, int end) {
         return new String(buffer.array(), beg, (end - beg));
     }
-
 
     /*
      * Read entire content into request's buffer
@@ -273,12 +274,13 @@ public class HttpRequest extends HttpMsg {
             int n = readLine(endpoint); // read chunk size text into buffer
             int beg = iread;
             int size = parseChunkSize(buffer, iread - n, iread); // Parse size in hex, ignore extension
-            if (size == 0)
+            if (size == 0) {
                 break;
+            }
             // If the chunk has not already been read in, do so
-            fill(endpoint, iread, size+2 /*chunksize + CRLF*/);
+            fill(endpoint, iread, size + 2 /*chunksize + CRLF*/);
             // record chunk start and end
-            chunkRanges.add(beg); 
+            chunkRanges.add(beg);
             chunkRanges.add(beg + size); // without the CRLF
             iread += size + 2; // for the next round.
         } while (true);
@@ -300,17 +302,16 @@ public class HttpRequest extends HttpMsg {
         }
         // TODO move all trailer stuff up
         contentLength = endOfLastChunk - contentOffset;
-        
+
         // At this point, the contentOffset and contentLen give the entire content 
     }
-    
 
     public static byte CR = (byte) '\r';
     public static byte LF = (byte) '\n';
-    static final byte  b0 = (byte) '0', b9 = (byte) '9';
-    static final byte  ba = (byte) 'a', bf = (byte) 'f';
-    static final byte  bA = (byte) 'A', bF = (byte) 'F';
-    static final byte  SEMI = (byte)';';
+    static final byte b0 = (byte) '0', b9 = (byte) '9';
+    static final byte ba = (byte) 'a', bf = (byte) 'f';
+    static final byte bA = (byte) 'A', bF = (byte) 'F';
+    static final byte SEMI = (byte) ';';
 
     public static int parseChunkSize(ByteBuffer buffer, int start, int end) throws IOException {
         byte[] bufa = buffer.array();
@@ -323,7 +324,7 @@ public class HttpRequest extends HttpMsg {
                 size = size * 16 + ((b - ba) + 10);
             } else if (b >= bA && b <= bF) {
                 size = size * 16 + ((b - bA) + 10);
-            } else if (b == CR || b == SEMI) { 
+            } else if (b == CR || b == SEMI) {
                 // SEMI-colon starts a chunk extension. We ignore extensions currently.
                 break;
             } else {

@@ -10,29 +10,29 @@ import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 
 /**
- * A hack that exposes the bytearray inside the ByteArrayOutputStream. This is to 
+ * A hack that exposes the bytearray inside the ByteArrayOutputStream. This is to
  * avoid copying the byte array when toByteArray() is called.
  */
 
 public class ExposedBaos extends ByteArrayOutputStream {
-  public ExposedBaos() {
-    super();
-  }
+    public ExposedBaos() {
+        super();
+    }
 
-  public ExposedBaos(int size) {
-    super(size);
-  }
+    public ExposedBaos(int size) {
+        super(size);
+    }
 
-  @Override
-  public byte[] toByteArray() {
-    return buf;
-  }
+    @Override
+    public byte[] toByteArray() {
+        return buf;
+    }
 
-  public ByteBuffer toByteBuffer() {
-    return ByteBuffer.wrap(buf, 0, count);
-  }
+    public ByteBuffer toByteBuffer() {
+        return ByteBuffer.wrap(buf, 0, count);
+    }
 
-  public void setCount(int n) {
-    super.count = n;
-  }
+    public void setCount(int n) {
+        super.count = n;
+    }
 }

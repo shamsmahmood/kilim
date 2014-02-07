@@ -17,14 +17,14 @@ public final class Fiber {
 
 //    public boolean debug = false;
     /**
-     * The current frame's state (local vars  and elements of the operand stack 
-     * that will be needed when the Fiber is resumed. It is always kept equal 
-     * to stateStack[iStack] if iStack is in the (0..stateStack.length-1) range, 
-     * and null otherwise. This is used by the generated code to avoid 
+     * The current frame's state (local vars  and elements of the operand stack
+     * that will be needed when the Fiber is resumed. It is always kept equal
+     * to stateStack[iStack] if iStack is in the (0..stateStack.length-1) range,
+     * and null otherwise. This is used by the generated code to avoid
      * having to manipulate stateStack in the generated code, and to isolate
      * all stack manipulations to up() and down().
      */
-    public State               curState;
+    public State curState;
 
     /**
      * The "program counter", kept equal to stateStack[iStack].pc and is used to
@@ -32,63 +32,63 @@ public final class Fiber {
      * also to inform the weaved code inside an exception handler which pausable
      * method (if at all) was being invoked when that exception was thrown. The
      * value 0 refers to normal operation; control transfers to the beginning of
-     * the original (pre-weaved) code. A value of n indicates a direct jump into 
+     * the original (pre-weaved) code. A value of n indicates a direct jump into
      * the nth pausable method (after restoring the appropriate state).
      * Accessed by generated code (hence public).
      */
-    public int                 pc;
+    public int pc;
 
     /*
      * One State object for each activation frame in the call hierarchy.
      */
-    private State[]            stateStack              = new State[10];
+    private State[] stateStack = new State[10];
 
     /*
      * Index into stateStack and equal to depth of call hierarchy - 1
      */
-    private int                iStack                  = -1;
+    private int iStack = -1;
 
-    boolean                    isPausing;
-    
-    boolean                    isDone;
+    boolean isPausing;
+
+    boolean isDone;
 
     /*
      * The task to which this Fiber belongs
      */
-    public Task                      task;
+    public Task task;
 
     /*
      * Special marker state used by pause
      */
-    private static final State PAUSE_STATE             = new State();
+    private static final State PAUSE_STATE = new State();
 
     /*
      * Status indicators returned by down()
      *
      * normal return, nothing to restore
      */
-    public static final int   NOT_PAUSING__NO_STATE  = 0;
-    
+    public static final int NOT_PAUSING__NO_STATE = 0;
+
     /*
      * Normal return, have saved state to restore before resuming
      */
-    public static final int   NOT_PAUSING__HAS_STATE = 1;
-    
+    public static final int NOT_PAUSING__HAS_STATE = 1;
+
     /*
      * Pausing, and need to save state before returning
      */
-    public static final int   PAUSING__NO_STATE      = 2;
-    
+    public static final int PAUSING__NO_STATE = 2;
+
     /*
      * Pausing, and have saved state from an earlier invocation,
      * so nothing left to do.
      */
-    public static final int   PAUSING__HAS_STATE     = 3;
+    public static final int PAUSING__HAS_STATE = 3;
 
     static {
         PAUSE_STATE.pc = 1;
     }
-    
+
     public Fiber(Task t) {
         task = t;
     }
@@ -100,12 +100,11 @@ public final class Fiber {
     public boolean isDone() {
         return isDone;
     }
-    
+
     public static void pause() throws Pausable {
         throw new IllegalStateException("pause() called without weaving");
     }
 
-    
     /*
      * The user calls pause(), but the weaver changes the
      * call to pause(Fiber), which alternates between
@@ -130,7 +129,7 @@ public final class Fiber {
      * 
      * @return a combined status of PAUSING/NOT_PAUSING and HAS_STATE/NO_STATE.
      */
-    
+
     public int up() {
         int d = iStack;
         iStack = --d;
@@ -156,22 +155,21 @@ public final class Fiber {
 //                if (debug) System.out.println("\nup(not pausing)" + this);;
 //                if (debug) ds();
                 return NOT_PAUSING__HAS_STATE;
-              }
+            }
         }
     }
-    
-    
+
     public final Fiber begin() {
         return down();
     }
-    
+
     /**
      * end() is the last up(). returns true if the fiber is not pausing.
      */
     public final boolean end() {
         assert iStack == 0 : "Reset: Expected iStack == 0, not " + iStack + "\n" + this;
         boolean isDone = !isPausing;
-        
+
         if (isDone) {
             // clean up callee's state
             stateStack[0] = null;
@@ -207,21 +205,23 @@ public final class Fiber {
 //        if (debug) ds();
         return this;
     }
-    
+
     static void ds() {
-        for (StackTraceElement ste: new Exception().getStackTrace()) {
+        for (StackTraceElement ste : new Exception().getStackTrace()) {
             String cl = ste.getClassName();
             String meth = ste.getMethodName();
-            if (cl.startsWith("kilim.Worker") || meth.equals("go") || meth.equals("ds")) continue;
-            String line = ste.getLineNumber() < 0 ? ""  : ":" + ste.getLineNumber();
-            System.out.println('\t' + cl + '.' + ste.getMethodName() + 
+            if (cl.startsWith("kilim.Worker") || meth.equals("go") || meth.equals("ds")) {
+                continue;
+            }
+            String line = ste.getLineNumber() < 0 ? "" : ":" + ste.getLineNumber();
+            System.out.println('\t' + cl + '.' + ste.getMethodName() +
                     '(' + ste.getFileName() + line + ')');
         }
     }
 
     /**
      * In the normal (non-exception) scheme of things, the iStack is incremented
-     * by down() on the way down and decremented by a corresponding up() when returning 
+     * by down() on the way down and decremented by a corresponding up() when returning
      * or pausing. If, however, an exception is thrown, we lose track of where we
      * are in the hierarchy. We recalibrate iStack by creating a dummy exception
      * and comparing it to the stack depth of an exception taken earlier.
@@ -240,6 +240,7 @@ public final class Fiber {
      * The call stack below runExecute may be owned by the scheduler, which
      * may permit more than one task to build up on the stack. For this reason,
      * we let the scheduler tell us the depth of upEx below the task's execute().
+     *
      * @return Fiber.pc (note: in contrast up() returns status)
      */
     public int upEx() {
@@ -255,7 +256,7 @@ public final class Fiber {
         curState = cs;
         return (cs == null) ? 0 : cs.pc;
     }
-    
+
     /**
      * Called by the weaved code while rewinding the stack. If we are about to
      * call a virtual pausable method, we need an object reference on which to
@@ -278,7 +279,7 @@ public final class Fiber {
     /**
      * Called by the generated code before pausing and unwinding its stack
      * frame.
-     * 
+     *
      * @param state
      */
     public void setState(State state) {
@@ -286,16 +287,16 @@ public final class Fiber {
         isPausing = true;
 //        System.out.println("setState[" + + iStack + "] = " + this);
     }
-    
+
     public State getState() {
-      return stateStack[iStack];
+        return stateStack[iStack];
     }
 
     void togglePause() {
         // The client code would have called fiber.down()
         // before calling Task.pause. curStatus would be
         // upto date.
-        
+
         if (curState == null) {
             setState(PAUSE_STATE);
         } else {
@@ -321,9 +322,9 @@ public final class Fiber {
         }
         return sb.toString();
     }
-    
+
     public void wrongPC() {
-    	throw new IllegalStateException("Wrong pc: " + pc);
+        throw new IllegalStateException("Wrong pc: " + pc);
     }
 
     static private void stateToString(StringBuilder sb, State s) {

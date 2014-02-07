@@ -6,17 +6,17 @@
 
 package kilim.examples;
 
-import java.math.BigInteger;
-
 import kilim.Generator;
 import kilim.Pausable;
 
+import java.math.BigInteger;
+
 /**
  * This example prints the nth Fibonacci number.
- * 
+ * <p/>
  * It illustrates a generator, which is part iterator, part task. It returns the next object 'yielded' by its execute
  * method. The difference between a generator and a task is that the former is invoked by the caller synchronously on
- * the caller's stack; it is not scheduled in a separate thread. 
+ * the caller's stack; it is not scheduled in a separate thread.
  */
 public class Fib extends Generator<BigInteger> {
 

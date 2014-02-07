@@ -19,14 +19,14 @@ public class TaskTestClassLoader extends ClassLoader {
         String path = baseURL.getPath();
         wclassDir = path.substring(0, path.indexOf("/classes/")) + "/wclasses/";
     }
-    
+
     public TaskTestClassLoader(ClassLoader aParent) {
         super(aParent);
     }
 
     @Override
     public Class<?> loadClass(String className, boolean resolve)
-                                                           throws ClassNotFoundException {
+            throws ClassNotFoundException {
         Class<?> ret = findLoadedClass(className);
         if (ret == null && className.startsWith("kilim")) {
             File f = new File(wclassDir + className.replace('.', '/') + ".class");
@@ -34,7 +34,7 @@ public class TaskTestClassLoader extends ClassLoader {
                 try {
                     byte[] bytes = getBytes(f);
 //                    if (resolve) {
-                        ret = defineClass(className, bytes, 0, bytes.length);
+                    ret = defineClass(className, bytes, 0, bytes.length);
 //                    } 
                 } catch (IOException ioe) {
                     System.err.println("Error loading class " + className + " from file " + f.getPath());
@@ -53,20 +53,22 @@ public class TaskTestClassLoader extends ClassLoader {
     }
 
     private byte[] getBytes(File f) throws IOException {
-        int size = (int)f.length();
+        int size = (int) f.length();
         byte[] bytes = new byte[size];
         int remaining = size;
         int i = 0;
         FileInputStream fis = new FileInputStream(f);
         while (remaining > 0) {
             int n = fis.read(bytes, i, remaining);
-            if (n == -1) break;
+            if (n == -1) {
+                break;
+            }
             remaining -= n;
             i += n;
         }
         return bytes;
     }
-    
+
     public static void main(String[] args) throws Exception {
         Class<?> c = new TaskTestClassLoader(Thread.currentThread().getContextClassLoader()).loadClass(args[0], true);
         c.newInstance();

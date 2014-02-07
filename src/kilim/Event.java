@@ -6,9 +6,9 @@ public class Event {
      * If you define your own eventType, make sure there are no collisions
      * with other projects. One strategy to reduce collisions is to take
      * the ascii codes of the first four consonants of your project's name
-     * 
      */
-    public final int eventType; 
+    public final int eventType;
+
     public Event(int evType) {
         eventType = evType;
     }

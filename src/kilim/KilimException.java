@@ -6,9 +6,10 @@
 
 package kilim;
 
-
 public class KilimException extends RuntimeException {
     private static final long serialVersionUID = 7856831331381969854L;
 
-    public KilimException(String msg) {super(msg);}
+    public KilimException(String msg) {
+        super(msg);
+    }
 }

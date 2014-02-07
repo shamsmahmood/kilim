@@ -10,7 +10,7 @@ public class RingQueue<T> {
     public RingQueue(int initialSize) {
         this(initialSize, Integer.MAX_VALUE);
     }
-    
+
     @SuppressWarnings("unchecked")
     public RingQueue(int initialSize, int maxSize) {
         elements = (T[]) new Object[initialSize];
@@ -32,10 +32,10 @@ public class RingQueue<T> {
             elem = elems[ic];
             return elem;
         }
-        
+
         return null;
     }
-    
+
     public T get() {
         T elem;
         T[] elems;
@@ -91,8 +91,9 @@ public class RingQueue<T> {
         int c = 0;
         T[] elems = elements;
         while (c < size) {
-            if (obj == elems[i])
+            if (obj == elems[i]) {
                 return true;
+            }
             i = (i + 1) % elems.length;
             c++;
         }

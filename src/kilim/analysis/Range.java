@@ -8,7 +8,6 @@ package kilim.analysis;
 
 /**
  * Used by catch handlers to handle overlapping ranges
- *
  */
 public class Range {
     int from;
@@ -18,7 +17,7 @@ public class Range {
         from = aFrom;
         to = aTo;
     }
-    
+
     static Range intersect(int a1, int e1, int a2, int e2) {
         // a2 lies between a1 and e1 or a1 between a2 and e2
         // all comparisons are inclusive of endpoints
@@ -27,7 +26,7 @@ public class Range {
         if (a1 <= a2 && a2 <= e1) {
             a = a2;
         } else if (a2 <= a1 && a1 <= e2) {
-            a = a1; 
+            a = a1;
         } else {
             return null;
         }

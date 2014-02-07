@@ -5,29 +5,30 @@
  */
 
 package kilim.analysis;
-import static kilim.Constants.THROWABLE_CLASS;
 
 import java.util.ArrayList;
 import java.util.Collections;
 
+import static kilim.Constants.THROWABLE_CLASS;
+
 /**
- * Representation for a catch handler. 
+ * Representation for a catch handler.
  */
 public class Handler implements Comparable<Handler> {
     /**
      * Source offset in method's instruction list
      */
-    public int        from;
+    public int from;
 
     /**
      * End offset in method's instruction list
      */
-    public int        to;
+    public int to;
 
     /**
      * Exception type
      */
-    public String     type;
+    public String type;
 
     /**
      * catch handler's entry point
@@ -45,27 +46,31 @@ public class Handler implements Comparable<Handler> {
         type = aType;
         catchBB = aCatchBB;
     }
-    
+
     public int compareTo(Handler h) {
         int c = this.type.compareTo(h.type);
-        if (c != 0) return c;
-        
+        if (c != 0) {
+            return c;
+        }
+
         c = this.catchBB.compareTo(h.catchBB);
-        if (c != 0) return c;
+        if (c != 0) {
+            return c;
+        }
 
         return from < h.from ? -1 : (from == h.from) ? 0 : 1;
     }
-    
-    public static ArrayList<Handler> consolidate( ArrayList<Handler> list) {
+
+    public static ArrayList<Handler> consolidate(ArrayList<Handler> list) {
         Collections.sort(list);
         ArrayList<Handler> newList = new ArrayList<Handler>(list.size());
         Handler cur = null;
-        for (Handler h: list) {
+        for (Handler h : list) {
             if (cur == null) {
                 cur = h;
                 newList.add(cur);
                 continue;
-            } 
+            }
             // Two options here. Either h is contiguous with c or it isn't. Contiguous
             // means that it has to be the same type and the same catchBB and  
             // from == to+1

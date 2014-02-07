@@ -9,15 +9,15 @@ package kilim;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class WorkerThread extends Thread {
-    volatile Task        runningTask;
+    volatile Task runningTask;
     /**
      * A list of tasks that prefer to run only on this thread. This is used by kilim.ReentrantLock and Task to ensure
      * that lock.release() is done on the same thread as lock.acquire()
      */
-    RingQueue<Task>      tasks      = new RingQueue<Task>(10);
-    Scheduler            scheduler;
-    static AtomicInteger gid        = new AtomicInteger();
-    public int           numResumes = 0;
+    RingQueue<Task> tasks = new RingQueue<Task>(10);
+    Scheduler scheduler;
+    static AtomicInteger gid = new AtomicInteger();
+    public int numResumes = 0;
 
     WorkerThread(Scheduler ascheduler) {
         super("KilimWorker-" + gid.incrementAndGet());
@@ -47,20 +47,23 @@ public class WorkerThread extends Thread {
     protected Task getNextTask(WorkerThread workerThread) throws ShutdownException {
         Task t = null;
         while (true) {
-            if (scheduler.isShutdown())
+            if (scheduler.isShutdown()) {
                 throw new ShutdownException();
+            }
 
             t = getNextTask();
-            if (t != null)
+            if (t != null) {
                 break;
+            }
 
             // try loading from scheduler
             scheduler.loadNextTask(this);
             synchronized (this) { // ///////////////////////////////////////
                 // Wait if still no task to execute.
                 t = tasks.get();
-                if (t != null)
+                if (t != null) {
                     break;
+                }
 
                 scheduler.addWaitingThread(this);
                 try {

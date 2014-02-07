@@ -14,7 +14,7 @@ import kilim.Task;
 import kilim.test.ex.ExYieldBase;
 
 public class TestYield extends TestCase {
-    
+
     public void testStackBottom_st() throws Exception {
         runTask(new kilim.test.ex.ExYieldStack(0));
     }
@@ -22,11 +22,11 @@ public class TestYield extends TestCase {
     public void testStackBottom_v() throws Exception {
         runTask(new kilim.test.ex.ExYieldStack(1));
     }
-    
+
     public void testStackBottom_av() throws Exception {
         runTask(new kilim.test.ex.ExYieldStack(2));
     }
-    
+
     public void testFactorial_st() throws Exception {
         runTask(new kilim.test.ex.ExYieldStack(3));
     }
@@ -34,7 +34,7 @@ public class TestYield extends TestCase {
     public void testFactorial_av() throws Exception {
         runTask(new kilim.test.ex.ExYieldStack(4));
     }
-    
+
     public void testDupsInVars() throws Exception {
         runTask(new kilim.test.ex.ExYieldDups(0));
     }
@@ -46,17 +46,16 @@ public class TestYield extends TestCase {
     public void testConstantsInStack() throws Exception {
         runTask(new kilim.test.ex.ExYieldConstants(0));
     }
-    
-    public void testLoop() throws Exception {
-         kilim.test.ex.ExLoop ex = new kilim.test.ex.ExLoop();
-         runTask(ex);
-         assertTrue(ex.verify());
-    }
 
+    public void testLoop() throws Exception {
+        kilim.test.ex.ExLoop ex = new kilim.test.ex.ExLoop();
+        runTask(ex);
+        assertTrue(ex.verify());
+    }
 
     public static void runTask(String taskClassName, int testCase) throws Exception {
         ExYieldBase task;
-        
+
         task = (ExYieldBase) (Class.forName(taskClassName).newInstance());
         task.testCase = testCase;
         runTask(task);
@@ -66,16 +65,16 @@ public class TestYield extends TestCase {
         Mailbox<ExitMsg> exitmb = new Mailbox<ExitMsg>();
         Scheduler s = new Scheduler(1);
         task.informOnExit(exitmb);
-        task.setScheduler(s); 
+        task.setScheduler(s);
         task.start();
-        
+
         ExitMsg m = exitmb.getb();
         if (m == null) {
             fail("Timed Out");
         } else {
             Object res = m.result;
             if (res instanceof Throwable) {
-                ((Throwable)res).printStackTrace();
+                ((Throwable) res).printStackTrace();
                 fail(m.toString());
             }
         }

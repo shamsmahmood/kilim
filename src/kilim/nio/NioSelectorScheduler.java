@@ -6,6 +6,12 @@
 
 package kilim.nio;
 
+import kilim.Mailbox;
+import kilim.Pausable;
+import kilim.RingQueue;
+import kilim.Scheduler;
+import kilim.Task;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
@@ -13,51 +19,43 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
-import java.util.LinkedList;
-
-import kilim.Mailbox;
-import kilim.Pausable;
-import kilim.RingQueue;
-import kilim.Scheduler;
-import kilim.Task;
-import kilim.http.IntList;
 
 /**
  * This class wraps a selector and runs it in a separate thread.
- * 
+ * <p/>
  * It runs one or more ListenTasks (bound to their respective ports), which in turn spawn as many session tasks (see
  * {@link #listen(int, Class, Scheduler)}) as the number of new http connections. The supplied scheduler is used to
  * execute the tasks. It is possible, although not typical, to run tasks in the NioSelectorScheduler itself, as it too
  * is a scheduler.
- * 
+ * <p/>
  * Usage is as follows:
  * <pre>
  *  NioSelectorScheduler nss = new NioSelectorScheduler();
  *  nss.listen(8080, MySessionTask.class, Scheduler.getDefaultScheduler();
- *  
+ *
  *  class MySessionTask extends SessionTask {
  *  ...
  *  }
  * </pre>
- *  @see SessionTask 
+ *
+ * @see SessionTask
  */
 public class NioSelectorScheduler extends Scheduler {
     //TODO: Fix hardcoding
-    public static int         LISTEN_BACKLOG  = 1000;
+    public static int LISTEN_BACKLOG = 1000;
 
-    public Selector           sel;
+    public Selector sel;
     /* 
      * The thread in which the selector runs. THe NioSelectorScheduler only runs one thread,
      * unlike typical schedulers that manage a pool of threads.
      */
-    public SelectorThread     selectorThread;
-    
+    public SelectorThread selectorThread;
+
     /**
      * SessionTask registers its endpoint with the selector by sending a SockEvent
-     * message on this mailbox. 
+     * message on this mailbox.
      */
     public Mailbox<SockEvent> registrationMbx = new Mailbox<SockEvent>(1000);
-    
 
     /**
      * @throws IOException
@@ -76,7 +74,7 @@ public class NioSelectorScheduler extends Scheduler {
         ListenTask t = new ListenTask(port, this, sockTaskClass);
         t.setScheduler(this);
         t.start();
-        return t.port(); 
+        return t.port();
     }
 
     @Override
@@ -92,7 +90,7 @@ public class NioSelectorScheduler extends Scheduler {
         super.shutdown();
         sel.wakeup();
     }
-    
+
     synchronized void addRunnable(Task t) {
         runnableTasks.put(t);
     }
@@ -124,12 +122,13 @@ public class NioSelectorScheduler extends Scheduler {
                             SelectionKey sk = it.next();
                             sk.cancel();
                             Object o = sk.attachment();
-                            if (o instanceof SockEvent  &&   ((SockEvent)o).ch instanceof ServerSocketChannel) {
+                            if (o instanceof SockEvent && ((SockEvent) o).ch instanceof ServerSocketChannel) {
                                 // TODO FIX: Need a proper, orderly shutdown procedure for tasks. This closes down the task
                                 // irrespective of the thread it may be running on. Terrible.
                                 try {
-                                    ((ServerSocketChannel)((SockEvent)o).ch).close();
-                                } catch (IOException ignore) {}
+                                    ((ServerSocketChannel) ((SockEvent) o).ch).close();
+                                } catch (IOException ignore) {
+                                }
                             }
                         }
                         break;
@@ -190,8 +189,8 @@ public class NioSelectorScheduler extends Scheduler {
 
     public static class ListenTask extends SessionTask {
         Class<? extends SessionTask> sessionClass;
-        ServerSocketChannel          ssc;
-        int                          port;
+        ServerSocketChannel ssc;
+        int port;
 
         public ListenTask(int port, NioSelectorScheduler selScheduler, Class<? extends SessionTask> sessionClass)
                 throws IOException {
@@ -202,16 +201,17 @@ public class NioSelectorScheduler extends Scheduler {
             ssc.socket().bind(new InetSocketAddress(port), LISTEN_BACKLOG); //
             ssc.configureBlocking(false);
             setEndPoint(new EndPoint(selScheduler.registrationMbx, ssc));
-        
+
             // if port is automatically assigned then retrieve actual value
-            if(port == 0) {
+            if (port == 0) {
                 this.port = ssc.socket().getLocalPort();
-            };    
+            }
+            ;
         }
 
         public int port() {
             return this.port;
-        }    
+        }
 
         public String toString() {
             return "ListenTask: " + port;
@@ -250,7 +250,7 @@ public class NioSelectorScheduler extends Scheduler {
 
     public static class RegistrationTask extends Task {
         Mailbox<SockEvent> mbx;
-        Selector           selector;
+        Selector selector;
 
         public RegistrationTask(Mailbox<SockEvent> ambx, Selector asel) {
             mbx = ambx;

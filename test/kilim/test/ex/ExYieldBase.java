@@ -3,22 +3,22 @@ package kilim.test.ex;
 import kilim.Task;
 
 public class ExYieldBase extends Task {
-    public static int        fi          = 10;
-    public static double     fd          = 10.0;
-    public static long       fl          = 10L;
-    public static float      ff          = 10.0f;
-    public static char       fc          = 10;
-    public static byte       fb          = 10;
-    public static short      fsh         = 10;
-    public static String     fs          = "10";
-    public static String[][] fa          = { { "10" } };
+    public static int fi = 10;
+    public static double fd = 10.0;
+    public static long fl = 10L;
+    public static float ff = 10.0f;
+    public static char fc = 10;
+    public static byte fb = 10;
+    public static short fsh = 10;
+    public static String fs = "10";
+    public static String[][] fa = {{"10"}};
 
     public boolean doPause = false;
-    
+
     public int testCase; // set by TestYield.runTask
 
     public static void verify(int i) {
-    	verify(i, fi);
+        verify(i, fi);
     }
 
     public static void verify(int i, int compareTo) {
@@ -26,22 +26,21 @@ public class ExYieldBase extends Task {
             throw new RuntimeException("i = " + i);
         }
     }
-    
+
     public static void verify(short s, short compareTo) {
         if (s != compareTo) {
             throw new RuntimeException("s = " + s);
         }
     }
-    
+
     public static void verify(short s) {
-    	verify(s, fsh);
+        verify(s, fsh);
     }
 
-    
     public static void verify(double d) {
-    	verify(d, fd);
+        verify(d, fd);
     }
-    
+
     public static void verify(double d, double compareTo) {
         if (d != compareTo) {
             throw new RuntimeException("d = " + d);
@@ -49,7 +48,7 @@ public class ExYieldBase extends Task {
     }
 
     public static void verify(long l) {
-    	verify(l, fl);
+        verify(l, fl);
     }
 
     public static void verify(long l, long compareTo) {
@@ -64,11 +63,10 @@ public class ExYieldBase extends Task {
         }
     }
 
-    
     public static void verify(float f) {
-    	verify(f, ff);
+        verify(f, ff);
     }
-    
+
     public static void verify(float f, float compareTo) {
         if (f != compareTo) {
             throw new RuntimeException("f = " + f);

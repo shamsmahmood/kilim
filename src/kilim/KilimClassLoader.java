@@ -11,7 +11,7 @@ public class KilimClassLoader extends ClassLoader {
     public Class<?> getLoadedClass(String className) {
         return super.findLoadedClass(className);
     }
-    
+
     public boolean isLoaded(String className) {
         return getLoadedClass(className) != null;
     }

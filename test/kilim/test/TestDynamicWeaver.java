@@ -1,44 +1,43 @@
 package kilim.test;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-
 import junit.framework.TestCase;
 import kilim.analysis.ClassInfo;
 import kilim.tools.Javac;
 import kilim.tools.Weaver;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+
 public class TestDynamicWeaver extends TestCase {
     /**
-     * Sample code to test a wide range of functionality: separate packages, import statements, 
+     * Sample code to test a wide range of functionality: separate packages, import statements,
      * mutually recursive classes across packages, Pausable methods, inner classes, public
      * and non-public classes, etc.
      */
-    String code1 = 
-        "package code1;" + 
-        "import java.io.IOException;" + 
-        "import kilim.*;" +
-        "public class A {" + 
-         "    code2.B bar;" +
-         "    class Inner {" +
-         "       void foo() throws Pausable, IOException {" +
-         "           for (int i = 0; i < 10; i++) {" +
-         "                Outer.xxx();" +
-         "           }" +
-         "       }" +
-         "    }" +
-        "}" +
-        "class Outer { " + 
-        "   static void xxx() throws Pausable, java.io.IOException {}" +
-        "}";
+    String code1 =
+            "package code1;" +
+                    "import java.io.IOException;" +
+                    "import kilim.*;" +
+                    "public class A {" +
+                    "    code2.B bar;" +
+                    "    class Inner {" +
+                    "       void foo() throws Pausable, IOException {" +
+                    "           for (int i = 0; i < 10; i++) {" +
+                    "                Outer.xxx();" +
+                    "           }" +
+                    "       }" +
+                    "    }" +
+                    "}" +
+                    "class Outer { " +
+                    "   static void xxx() throws Pausable, java.io.IOException {}" +
+                    "}";
 
-    String code2 = 
-        "package code2;" + 
-        "public class B { " +
-        "    code1.A foo;" + 
-        "}";
-
+    String code2 =
+            "package code2;" +
+                    "public class B { " +
+                    "    code1.A foo;" +
+                    "}";
 
     public List<ClassInfo> compile() throws Exception {
         List<ClassInfo> classes = Javac.compile(Arrays.asList(code1, code2));
@@ -57,7 +56,6 @@ public class TestDynamicWeaver extends TestCase {
         List<ClassInfo> classes = compile();
 
         classes = new Weaver().weave(classes);
-        
 
         HashSet<String> expectedClasses = new HashSet<String>(
                 Arrays.asList("kilim.S_I", "code1.A$Inner", "code1.Outer"));
@@ -87,7 +85,7 @@ public class TestDynamicWeaver extends TestCase {
             }
         }
     }
-    
+
     static class TestClassLoader extends ClassLoader {
         public void load(ClassInfo cl) {
             Class<?> c = super.defineClass(cl.className, cl.bytes, 0, cl.bytes.length);

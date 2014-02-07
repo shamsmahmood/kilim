@@ -1,5 +1,7 @@
 package kilim.test.ex;
+
 import kilim.Pausable;
+
 public class ExFlow {
     void loop() throws Pausable {
         ExA a = null;
@@ -8,7 +10,8 @@ public class ExFlow {
             if (i < 5) {
                 a = new ExC();
             } else {
-                a = new ExD();;
+                a = new ExD();
+                ;
             }
         }
         // at join, the stack must have types of [I,Lkilim.test.ex.ExFlow; and Lkilim.test.ex.ExA;
@@ -17,6 +20,8 @@ public class ExFlow {
         System.out.println(i);
         System.out.println(x);
     }
-    
-    int join(ExA a) throws Pausable {  return 10;}
+
+    int join(ExA a) throws Pausable {
+        return 10;
+    }
 }

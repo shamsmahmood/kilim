@@ -5,11 +5,17 @@
  */
 
 package kilim.tools;
-import static kilim.analysis.Utils.dedent;
-import static kilim.analysis.Utils.indent;
-import static kilim.analysis.Utils.pn;
-import static kilim.analysis.Utils.resetIndentation;
-import static org.objectweb.asm.Opcodes.INVOKESTATIC;
+
+import kilim.analysis.BasicBlock;
+import kilim.analysis.ClassFlow;
+import kilim.analysis.Frame;
+import kilim.analysis.MethodFlow;
+import kilim.analysis.TypeDesc;
+import kilim.analysis.Usage;
+import kilim.analysis.Value;
+import kilim.mirrors.Detector;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -22,20 +28,12 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
-import kilim.analysis.BasicBlock;
-import kilim.analysis.ClassFlow;
-import kilim.analysis.Frame;
-import kilim.analysis.MethodFlow;
-import kilim.analysis.TypeDesc;
-import kilim.analysis.Usage;
-import kilim.analysis.Value;
-import kilim.mirrors.Detector;
-
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.MethodInsnNode;
+import static kilim.analysis.Utils.*;
+import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 
 /**
  * Used to dump the stack and locals at the beginning of each basic block
+ *
  * @author ram
  */
 public class FlowAnalyzer {
@@ -51,7 +49,7 @@ public class FlowAnalyzer {
             analyzeClass(name, Detector.DEFAULT);
         }
     }
-    
+
     private static void analyzeClass(String className, Detector detector) {
         try {
             pn("-------------------------------------------------");
@@ -64,14 +62,16 @@ public class FlowAnalyzer {
                     fis = new FileInputStream(className);
                     cf = new ClassFlow(fis, detector);
                 } finally {
-                    if (fis != null) {fis.close();}
+                    if (fis != null) {
+                        fis.close();
+                    }
                 }
             }
             if (cf == null) {
                 cf = new ClassFlow(className, detector);
             }
             ArrayList<MethodFlow> flows = cf.analyze(true);
-            for (MethodFlow flow: flows) {
+            for (MethodFlow flow : flows) {
                 reportFlow(flow, className);
             }
         } catch (IOException e) {
@@ -82,25 +82,25 @@ public class FlowAnalyzer {
             stackTrace(ie);
         }
     }
-    
+
     private static void stackTrace(Throwable t) {
         PrintStream ps = new PrintStream(System.out);
         t.printStackTrace(ps);
     }
-    
+
     private static void reportFlow(MethodFlow method, String className) {
         resetIndentation();
-        pn("Method : "+  className + '.' + method.name);
-        
+        pn("Method : " + className + '.' + method.name);
+
         pn("MaxStack: " + method.maxStack);
         pn("MaxLocals: " + method.maxLocals);
         ArrayList<BasicBlock> bbs = method.getBasicBlocks();
         Collections.sort(bbs);
         indent(2);
-        for (BasicBlock bb: bbs) {
+        for (BasicBlock bb : bbs) {
             AbstractInsnNode ainode = bb.getInstruction(bb.startPos);
             if (ainode instanceof MethodInsnNode) {
-                MethodInsnNode m = (MethodInsnNode)ainode;
+                MethodInsnNode m = (MethodInsnNode) ainode;
                 int n = getNumArgs(m); // This many will get consumed from stack
                 pn("Call(" + n + "): " + m.owner + "." + m.name + m.desc);
                 indent(2);
@@ -120,7 +120,7 @@ public class FlowAnalyzer {
         }
         dedent(2);
     }
-    
+
     private static String uniqueItems(BasicBlock bb, Frame f, Usage u, int nStack) {
         StringBuffer sb = new StringBuffer(80);
         int numNonConstants = 0;
@@ -130,13 +130,17 @@ public class FlowAnalyzer {
             if (u.isLiveIn(i)) {
                 numLive++;
                 Value v = f.getLocal(i);
-                if (!set.contains(v)) set.add(v);
+                if (!set.contains(v)) {
+                    set.add(v);
+                }
             }
         }
         nStack = f.getStackLen() - nStack;
         for (int i = 0; i < nStack; i++) {
             Value v = f.getStack(i);
-            if (!set.contains(v)) set.add(v);
+            if (!set.contains(v)) {
+                set.add(v);
+            }
         }
         char[] sig = new char[set.size()];
         // create canonical sig. Convert types to one of 'O', 'I', 'F', 'L', 'D' and
@@ -146,16 +150,26 @@ public class FlowAnalyzer {
             Value v = set.get(i);
             char c = v.getTypeDesc().charAt(0);
             switch (c) {
-                case 'L': case '[': case 'N': 
-                    c = 'O'; break;
-                case 'I': case 'B': case 'S': case 'Z': case 'C': 
-                    c = 'I'; break;
+                case 'L':
+                case '[':
+                case 'N':
+                    c = 'O';
+                    break;
+                case 'I':
+                case 'B':
+                case 'S':
+                case 'Z':
+                case 'C':
+                    c = 'I';
+                    break;
                 case 'J':
-                    c = 'J'; break;
-                case 'F': 
-                    c = 'F'; break;
-                case 'U': 
-                    default: {
+                    c = 'J';
+                    break;
+                case 'F':
+                    c = 'F';
+                    break;
+                case 'U':
+                default: {
                     c = 'U';
                     System.err.println("***************************************");
                     System.err.println("Undefined/unrecognized value " + v);
@@ -177,21 +191,25 @@ public class FlowAnalyzer {
         sb.append("\nState signature: ").append(set.size() == 0 ? "None" : new String(sig));
         return sb.toString();
     }
-    
+
     private static int getNumArgs(MethodInsnNode m) {
         int ret = TypeDesc.getNumArgumentTypes(m.desc);
-        if (m.getOpcode() != INVOKESTATIC) ret++; 
+        if (m.getOpcode() != INVOKESTATIC) {
+            ret++;
+        }
         return ret;
     }
-    
+
     public static void analyzeJar(String jarFile, Detector detector) {
         try {
             Enumeration<JarEntry> e = new JarFile(jarFile).entries();
             while (e.hasMoreElements()) {
                 ZipEntry en = (ZipEntry) e.nextElement();
                 String n = en.getName();
-                if (!n.endsWith(".class")) continue;
-                n = n.substring(0, n.length() - 6).replace('/','.');
+                if (!n.endsWith(".class")) {
+                    continue;
+                }
+                n = n.substring(0, n.length() - 6).replace('/', '.');
                 analyzeClass(n, detector);
             }
         } catch (Exception e) {

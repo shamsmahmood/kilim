@@ -35,6 +35,7 @@ public class P {
         System.out.print(o);
         System.out.print(" ");
     }
+
     // Call as invokestatic kilim/tools/P/ptest()V
     public static void ptest() {
         System.out.println("test");

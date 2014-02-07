@@ -6,7 +6,10 @@
 
 package kilim.tools;
 
-import static kilim.Constants.*;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -20,10 +23,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Type;
+import static kilim.Constants.*;
 
 /**
  * This is a replacement for the jasmin bytecode assembler and uses the same
@@ -41,32 +41,32 @@ import org.objectweb.asm.Type;
  * </pre>
  * If stack frames are requested (default), the version of the class file is V1_6, otherwise
  * it is V1_5.
- * 
+ *
  * @author sriram srinivasan (sriram@malhar.net)
  */
 public class Asm {
-    static boolean                  quiet          = false;
-    static String                   outputDir      = ".";
-    static Pattern                  wsPattern      = Pattern.compile("\\s+");
-    static Pattern                  commentPattern = Pattern.compile("^;.*$| ;[^\"]*");
+    static boolean quiet = false;
+    static String outputDir = ".";
+    static Pattern wsPattern = Pattern.compile("\\s+");
+    static Pattern commentPattern = Pattern.compile("^;.*$| ;[^\"]*");
 
-    private boolean                 eofOK          = false;
-    private ClassWriter             cv;
-    private MethodVisitor           mv;
-    private int                     maxLocals = 1;
-    private int                     maxStack = 1;
-    private HashSet<String>         declaredLabels = new HashSet<String>();
-    private HashMap<String, Label>  labels         = new HashMap<String, Label>();
-    private String                  className;
-    private String                  methodName;
-    private String                  fileName;
-    private Line                    line, bufferedLine;
-    private Matcher                 lastMatch= null; // for error context
-    private Pattern                 lastPattern = null;
+    private boolean eofOK = false;
+    private ClassWriter cv;
+    private MethodVisitor mv;
+    private int maxLocals = 1;
+    private int maxStack = 1;
+    private HashSet<String> declaredLabels = new HashSet<String>();
+    private HashMap<String, Label> labels = new HashMap<String, Label>();
+    private String className;
+    private String methodName;
+    private String fileName;
+    private Line line, bufferedLine;
+    private Matcher lastMatch = null; // for error context
+    private Pattern lastPattern = null;
 
-    private LineNumberReader        reader;
+    private LineNumberReader reader;
 
-    static HashMap<String, Integer> modifiers      = new HashMap<String, Integer>();
+    static HashMap<String, Integer> modifiers = new HashMap<String, Integer>();
 
     static {
         modifiers.put("public", ACC_PUBLIC);
@@ -88,7 +88,9 @@ public class Asm {
     public static void main(String[] args) throws IOException {
         List<String> files = parseArgs(args);
         for (String arg : files) {
-            if (!quiet) {System.out.println("Asm: "  + arg);}
+            if (!quiet) {
+                System.out.println("Asm: " + arg);
+            }
             new Asm(arg).write();
         }
     }
@@ -96,7 +98,7 @@ public class Asm {
     public Asm(String afileName) throws IOException {
         fileName = afileName;
         reader = new LineNumberReader(new FileReader(fileName));
-        cv = new ClassWriter(computeFrames? ClassWriter.COMPUTE_FRAMES : 0);  
+        cv = new ClassWriter(computeFrames ? ClassWriter.COMPUTE_FRAMES : 0);
         try {
             parseClass();
         } catch (EOF eof) {
@@ -123,6 +125,7 @@ public class Asm {
     private static String classNamePatternStr = "[\\w/$]+";
     private static String modifierPatternStr = "public|private|protected|static|final|synchronized|volatile|transient|native|abstract|strict| ";
     private static Pattern classPattern = Pattern.compile("\\.(class|interface) ((" + modifierPatternStr + ")*)(" + classNamePatternStr + ")$");
+
     private void parseClass() {
         readLine();
         // match class declaration
@@ -130,26 +133,30 @@ public class Asm {
         if (!lineMatch(classPattern)) {
             err("Expected .class or .interface declaration");
         }
-        
+
         if (line.startsWith(".interface")) {
             acc = ACC_INTERFACE;
         }
-        
+
         acc |= parseModifiers(group(2));
         className = group(4);
         String superClassName = parseSuper();
         String[] interfaces = parseInterfaces();
         cv.visit((computeFrames ? V1_6 : V1_5), acc, className, null, superClassName, interfaces);
-        
+
         parseClassBody();
 
         eofOK = true;
     }
 
     private int parseModifiers(String s) {
-        if (s == null) return 0;
+        if (s == null) {
+            return 0;
+        }
         s = s.trim();
-        if (s.equals("")) return 0;
+        if (s.equals("")) {
+            return 0;
+        }
         int acc = 0;
         for (String modifier : split(wsPattern, s)) {
             if (!modifiers.containsKey(modifier)) {
@@ -191,7 +198,7 @@ public class Asm {
                 parseField();
             } else if (lineMatch(methodPattern)) {
                 parseMethod();
-            } else if (lineMatch(annotationPattern)){
+            } else if (lineMatch(annotationPattern)) {
                 readLine();
                 if (!line.startsWith(".end annotation")) {
                     err(".end annotation not present");
@@ -207,17 +214,18 @@ public class Asm {
     // .field (modifier)* name type (= constval)?
     private static String namePatternStr = "[$\\w]+";
     private static String descPatternStr = "[$\\[\\w/;]+";
-    private static Pattern fieldPattern  = 
-        Pattern.compile(".field +((" + modifierPatternStr + ")*) +(" + namePatternStr + ") +(" + descPatternStr + ") *(= *(.*))?");
+    private static Pattern fieldPattern =
+            Pattern.compile(".field +((" + modifierPatternStr + ")*) +(" + namePatternStr + ") +(" + descPatternStr + ") *(= *(.*))?");
+
     private void parseField() {
-        String name       = group(3);
-        String desc       = group(4);
-        String valueStr   = group(6);
-        Object value      = valueStr == null ? null : 
-                             parseValue(valueStr, 
-                                       (desc.equals(D_DOUBLE) || desc.equals(D_LONG)));
+        String name = group(3);
+        String desc = group(4);
+        String valueStr = group(6);
+        Object value = valueStr == null ? null :
+                parseValue(valueStr,
+                        (desc.equals(D_DOUBLE) || desc.equals(D_LONG)));
         cv.visitField(
-                parseModifiers(group(1)), 
+                parseModifiers(group(1)),
                 name, // field name
                 desc,
                 null, // no signature 
@@ -230,14 +238,14 @@ public class Asm {
     //   .method private final static foobar(IJZ)[[Ljava/lang/Object; 
     //   .method <init>(IJZ)
     private static String methodNamePatternStr = "[<>\\w]+"; // 
-    private static Pattern methodPattern = Pattern.compile(".method +(("+ modifierPatternStr + ")*) ("+ methodNamePatternStr + ") *([(][^\\s]+)");
+    private static Pattern methodPattern = Pattern.compile(".method +((" + modifierPatternStr + ")*) (" + methodNamePatternStr + ") *([(][^\\s]+)");
 
     private void parseMethod() {
         eofOK = false;
         methodName = group(3);
         int acc = parseModifiers(group(1));
         String desc = group(4);
-        
+
         String[] exceptions = parseMethodExceptions();
         mv = cv.visitMethod(
                 acc,
@@ -286,6 +294,7 @@ public class Asm {
     }
 
     private static Pattern labelPattern = Pattern.compile("^(\\w+) *: *$");
+
     private void parseLabel() {
         String str = group(1);
         if (declaredLabels.contains(str)) {
@@ -296,19 +305,20 @@ public class Asm {
             mv.visitLabel(l);
         }
     }
-    
+
     private void checkLabelDeclarations() {
-        for (String key: labels.keySet()) {
+        for (String key : labels.keySet()) {
             if (!declaredLabels.contains(key)) {
                 throw new AsmException("Label " + key + " not declared in " + methodName);
             }
         }
     }
 
-    static Pattern localsPattern     = Pattern.compile(".limit +locals +([0-9]+)");
-    static Pattern stackPattern      = Pattern.compile(".limit +stack +([0-9]+)");
-    static Pattern catchPattern      = Pattern.compile(".catch +(" + classNamePatternStr + ") +from +([\\w]+) +to +([\\w]+) +using +([\\w]+)");
+    static Pattern localsPattern = Pattern.compile(".limit +locals +([0-9]+)");
+    static Pattern stackPattern = Pattern.compile(".limit +stack +([0-9]+)");
+    static Pattern catchPattern = Pattern.compile(".catch +(" + classNamePatternStr + ") +from +([\\w]+) +to +([\\w]+) +using +([\\w]+)");
     static Pattern annotationPattern = Pattern.compile(".annotation +((visible) )?([\\w/;]+)");
+
     private void parseMethodDirective() {
         if (lineMatch(localsPattern)) {
             maxLocals = parseInt(group(1));
@@ -340,8 +350,8 @@ public class Asm {
             err(".end annotation not present");
         }
     }
-    
-    static String                                 opcodeStrs[]   = { "nop",
+
+    static String opcodeStrs[] = {"nop",
             "aconst_null", "iconst_m1", "iconst_0", "iconst_1", "iconst_2",
             "iconst_3", "iconst_4", "iconst_5", "lconst_0", "lconst_1",
             "fconst_0", "fconst_1", "fconst_2", "dconst_0", "dconst_1",
@@ -374,33 +384,33 @@ public class Asm {
             "invokespecial", "invokestatic", "invokeinterface", "unused",
             "new", "newarray", "anewarray", "arraylength", "athrow",
             "checkcast", "instanceof", "monitorenter", "monitorexit", "wide",
-            "multianewarray", "ifnull", "ifnonnull", "goto_w", "jsr_w" };
-    
+            "multianewarray", "ifnull", "ifnonnull", "goto_w", "jsr_w"};
+
     private static boolean computeFrames = true;
 
-    private final static HashMap<String, Integer> opcodeMap      = new HashMap<String, Integer>();
-    private final static byte[]                   visitTypes;
-    private final static int                      INSN           = 0;
-    private final static int                      VAR            = 1;
-    private final static int                      LDC            = 2;
-    private final static int                      JUMP           = 3;
-    private final static int                      TABLESWITCH    = 4;
-    private final static int                      LOOKUPSWITCH   = 5;
-    private final static int                      FIELD          = 6;
-    private final static int                      METHOD         = 7;
-    private final static int                      TYPE           = 8;
-    private final static int                      MULTIANEWARRAY = 9;
-    private final static int                      INT            = 10;
-    private final static int                      IINC           = 11;
+    private final static HashMap<String, Integer> opcodeMap = new HashMap<String, Integer>();
+    private final static byte[] visitTypes;
+    private final static int INSN = 0;
+    private final static int VAR = 1;
+    private final static int LDC = 2;
+    private final static int JUMP = 3;
+    private final static int TABLESWITCH = 4;
+    private final static int LOOKUPSWITCH = 5;
+    private final static int FIELD = 6;
+    private final static int METHOD = 7;
+    private final static int TYPE = 8;
+    private final static int MULTIANEWARRAY = 9;
+    private final static int INT = 10;
+    private final static int IINC = 11;
 
     static {
         for (int i = 0; i < opcodeStrs.length; i++) {
             opcodeMap.put(opcodeStrs[i], i);
         }
         opcodeMap.put("invokenonvirtual", opcodeMap.get("invokespecial"));
-        
+
         // Generated the table from asm.Opcode
-        visitTypes = new byte[] {
+        visitTypes = new byte[]{
                 INSN, INSN, INSN, INSN, INSN, INSN, INSN, INSN, INSN, INSN,
                 INSN, INSN, INSN, INSN, INSN, INSN, INT, INT, LDC, LDC,
                 LDC, VAR, VAR, VAR, VAR, VAR, INSN, INSN, INSN, INSN,
@@ -425,11 +435,11 @@ public class Asm {
         };
     }
 
-    static final Pattern insnPattern       = Pattern.compile("(\\w+)( +(.*))?");
-    static final Pattern quotedPattern     = Pattern.compile("(.*)");
-    static final Pattern casePattern       = Pattern.compile("(\\w+) *: *(\\w+)");
-    static final Pattern methodInvokePattern = Pattern.compile("("+ classNamePatternStr + ")[/.](" + methodNamePatternStr + ") *([(].*?[)]" + descPatternStr + ") *(, *\\d+)?");
-    static final Pattern fieldSpecPattern  = Pattern.compile("([\\w/.$]+)[/.]([\\w$]+) +([^\\s]+)");
+    static final Pattern insnPattern = Pattern.compile("(\\w+)( +(.*))?");
+    static final Pattern quotedPattern = Pattern.compile("(.*)");
+    static final Pattern casePattern = Pattern.compile("(\\w+) *: *(\\w+)");
+    static final Pattern methodInvokePattern = Pattern.compile("(" + classNamePatternStr + ")[/.](" + methodNamePatternStr + ") *([(].*?[)]" + descPatternStr + ") *(, *\\d+)?");
+    static final Pattern fieldSpecPattern = Pattern.compile("([\\w/.$]+)[/.]([\\w$]+) +([^\\s]+)");
 
     private void parseInstructions() {
         // line read in parseMethodBody()
@@ -538,14 +548,14 @@ public class Asm {
                 opcheck("expected type", operand);
                 mv.visitTypeInsn(opcode, operand);
                 break;
-                
+
             case MULTIANEWARRAY: {
                 opcheck("expected array type and dimensions", operand);
                 String words[] = split(wsPattern, operand);
                 mv.visitMultiANewArrayInsn(words[0], parseInt(words[1]));
                 break;
             }
-            
+
             case INT: {
                 int op = -1;
                 if (opcode == NEWARRAY) {
@@ -575,7 +585,7 @@ public class Asm {
                 mv.visitIntInsn(opcode, op);
                 break;
             }
-            
+
             case IINC: {
                 opcheck("Expected iinc <var> <inc amount>", operand);
                 String words[] = split(wsPattern, operand);
@@ -584,18 +594,18 @@ public class Asm {
                 mv.visitIincInsn(var, increment);
                 break;
             }
-            
+
             default:
                 err("INTERNAL ERROR: UNKNOWN TYPE OF INSTRUCTION");
         }
     }
-    
+
     private void opcheck(String errMessage, String operand) {
         if (operand == null) {
             err(errMessage);
         }
     }
-    
+
     private Object parseValue(String s, boolean isDoubleWord) {
         Object ret = null;
         if (s == null) {
@@ -615,21 +625,21 @@ public class Asm {
         } else {
             if (s.indexOf('.') == -1) {
                 if (isDoubleWord) {
-                    ret = (Long)parseLong(s);
+                    ret = (Long) parseLong(s);
                 } else {
                     ret = (Integer) parseInt(s);
                 }
             } else {
                 if (isDoubleWord) {
-                    ret = (Double)parseDouble(s); 
+                    ret = (Double) parseDouble(s);
                 } else {
-                    ret = (Float)parseFloat(s);
+                    ret = (Float) parseFloat(s);
                 }
             }
         }
         return ret;
     }
-    
+
     int parseInt(String s) {
         if (s == null) {
             err("Expected integer");
@@ -653,7 +663,7 @@ public class Asm {
         }
         return 0L;
     }
-    
+
     float parseFloat(String s) {
         if (s == null) {
             err("Expected float");
@@ -692,7 +702,7 @@ public class Asm {
 
     private void err(String s) {
         String msg = String.format("%s: %d: %s\n", fileName, line.n, s);
-        msg += line.s; 
+        msg += line.s;
         throw new AsmException(msg);
     }
 
@@ -714,7 +724,6 @@ public class Asm {
             }
         }
     }
-    
 
     private void putBackLine() {
         bufferedLine = line;
@@ -738,8 +747,7 @@ public class Asm {
             throw new EOF();
         }
     }
-    
-    
+
     boolean match(String s, Pattern p) {
         lastMatch = p.matcher(s);
         lastPattern = p;
@@ -751,12 +759,12 @@ public class Asm {
         lastPattern = p;
         return lastMatch.find();
     }
-    
+
     String group(int i) {
         String ret = lastMatch.group(i);
-        return ret; 
+        return ret;
     }
-    
+
     int groupCount() {
         return lastMatch.groupCount();
     }
@@ -813,8 +821,8 @@ class EOF extends RuntimeException {
 }
 
 class Line {
-    int            n;
-    String         s;
+    int n;
+    String s;
 
     Line(int num, String str) {
         n = num;
@@ -838,7 +846,9 @@ class StringList extends ArrayList<String> {
     }
 }
 
-@SuppressWarnings("serial") 
+@SuppressWarnings("serial")
 class AsmException extends RuntimeException {
-    public AsmException(String s) {super(s);}
+    public AsmException(String s) {
+        super(s);
+    }
 }

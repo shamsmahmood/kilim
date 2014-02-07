@@ -6,26 +6,26 @@
 
 package kilim.nio;
 
-import java.io.IOException;
-
 import kilim.Scheduler;
 import kilim.Task;
 
+import java.io.IOException;
+
 public class SessionTask extends Task {
-  public EndPoint endpoint;
-  public Scheduler preferredScheduler;
-  
-  public EndPoint getEndPoint() {
-    return endpoint;
-  }
-  
-  public void setEndPoint(EndPoint ep) throws IOException {
-    this.endpoint = ep;
-  }
-  
-  public void close() {
-    if (endpoint != null) {
-      endpoint.close();
+    public EndPoint endpoint;
+    public Scheduler preferredScheduler;
+
+    public EndPoint getEndPoint() {
+        return endpoint;
     }
-  }
+
+    public void setEndPoint(EndPoint ep) throws IOException {
+        this.endpoint = ep;
+    }
+
+    public void close() {
+        if (endpoint != null) {
+            endpoint.close();
+        }
+    }
 }

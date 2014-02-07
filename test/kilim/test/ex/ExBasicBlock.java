@@ -6,20 +6,20 @@ import kilim.Task;
 public class ExBasicBlock {
     void noop() throws ArrayIndexOutOfBoundsException {
     }
-    
+
     static void pausable() throws Pausable {
         "afakflkaflakd".getBytes();
     }
-    
+
     static int testFiber(Object testArgs1, Object[] testArgs) throws Pausable {
-      Task.getCurrentTask();
-      int a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0;
-      for (int i = 0; i < g; i++) {
-        g = a + b + c + d + e + f;
-      }
-      return g;
+        Task.getCurrentTask();
+        int a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0;
+        for (int i = 0; i < g; i++) {
+            g = a + b + c + d + e + f;
+        }
+        return g;
     }
-    
+
     int loop() throws Pausable {
         int sum = 0;
         for (int i = 0; i < 10; i++) {
@@ -35,7 +35,7 @@ public class ExBasicBlock {
             }
         }
     }
-    
+
     void exception() throws Pausable {
         try {
             try {
@@ -51,7 +51,7 @@ public class ExBasicBlock {
             noop();
         }
     }
-    
+
     void complex() throws Pausable {
         double d = 10.0;
         Object o = new Object();
@@ -60,7 +60,7 @@ public class ExBasicBlock {
                 if (d > 10.3 && d < 10.5) {
                     d = 20.0;
                     try {
-                        synchronized(o) {
+                        synchronized (o) {
                             o.hashCode();
                         }
                     } catch (RuntimeException re) {

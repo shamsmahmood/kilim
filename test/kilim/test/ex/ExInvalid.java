@@ -7,29 +7,33 @@ import kilim.Pausable;
 public class ExInvalid {
 }
 
-
 // illegal to override a non-pausable method with a pausable one
 class ExNPSuper {
-    void foo() {}
+    void foo() {
+    }
 }
 
 //illegal to override a pausable method with a non-pausable one
 class ExPSuper {
-    void foo() throws Pausable {}
-}
-class ExInvalidNPDerived extends ExPSuper {
-    void foo() {
-        
-    }   
+    void foo() throws Pausable {
+    }
 }
 
+class ExInvalidNPDerived extends ExPSuper {
+    void foo() {
+
+    }
+}
 
 //------------------------------------------------
 // Illegal to override an pausable interface method with a non-pausable one
 interface ExPFoo {
     void foo() throws Pausable;
 }
-interface ExNPBar extends ExPFoo {}
+
+interface ExNPBar extends ExPFoo {
+}
+
 class ExInvalidNPImp implements ExNPBar {
     public void foo() {
     }

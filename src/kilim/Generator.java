@@ -10,30 +10,31 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * A Generator, from the caller's perspective, looks like a normal iterator 
- * that produces values.  Because a standard iterator's next() method 
- * must return every time, the programmer is forced to manage the stack 
+ * A Generator, from the caller's perspective, looks like a normal iterator
+ * that produces values.  Because a standard iterator's next() method
+ * must return every time, the programmer is forced to manage the stack
  * explicitly. The Generator class instead allows one to write a
- * task with an automatically managed stack and couple it to an 
- * iterator interface. 
- *  
+ * task with an automatically managed stack and couple it to an
+ * iterator interface.
+ * <p/>
  * For example:
- * 
+ * <p/>
  * <pre>
  * class StringGenerator extends Generator<String>{
  *   public void execute() throws Pausable {
  *       while (!done) {
  *           String s = getNextWord(); // this can pause
- *           yield(s);  
+ *           yield(s);
  *       }
  *   }
  *   private String getNextWord() throws Pausable {
  *   }
  * }
- * 
- * 
+ *
+ *
  * </pre>
- *  @see kilim.examples.Fib, kilim.examples.Tree
+ *
+ * @see kilim.examples.Fib, kilim.examples.Tree
  */
 
 public class Generator<T> extends Task implements Iterator<T>, Iterable<T> {
@@ -41,8 +42,9 @@ public class Generator<T> extends Task implements Iterator<T>, Iterable<T> {
 
     public boolean hasNext() {
         if (nextVal == null) {
-            if (isDone())
+            if (isDone()) {
                 return false;
+            }
             _runExecute(null);
             return nextVal != null;
         } else {

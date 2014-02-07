@@ -3,7 +3,7 @@ package kilim.test.ex;
 import kilim.Pausable;
 
 public class ExGenerics<T> extends ExYieldBase {
-    
+
     public void execute() throws Pausable {
         doPause = false;
         test();
@@ -14,7 +14,7 @@ public class ExGenerics<T> extends ExYieldBase {
     T foo() throws Pausable {
         return null;
     }
-    
+
     static class ExGenericsConcrete extends ExGenerics<String> {
         String foo() throws Pausable {
             String s = fs;
@@ -24,6 +24,7 @@ public class ExGenerics<T> extends ExYieldBase {
             return s;
         }
     }
+
     private void test() throws Pausable {
         ExGenericsConcrete eb = new ExGenericsConcrete();
         verify(eb.foo());

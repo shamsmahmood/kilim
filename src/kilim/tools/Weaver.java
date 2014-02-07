@@ -6,6 +6,13 @@
 
 package kilim.tools;
 
+import kilim.KilimException;
+import kilim.analysis.ClassInfo;
+import kilim.analysis.ClassWeaver;
+import kilim.analysis.FileLister;
+import kilim.mirrors.CachedClassMirrors;
+import kilim.mirrors.Detector;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -16,15 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import kilim.KilimException;
-import kilim.analysis.ClassInfo;
-import kilim.analysis.ClassWeaver;
-import kilim.analysis.FileLister;
-import kilim.mirrors.CachedClassMirrors;
-import kilim.mirrors.Detector;
-
 /**
- * This class supports both command-line and run time weaving of Kilim bytecode. 
+ * This class supports both command-line and run time weaving of Kilim bytecode.
  */
 
 public class Weaver {
@@ -37,15 +37,15 @@ public class Weaver {
      * <pre>
      * Usage: java kilim.tools.Weaver -d &lt;output directory&gt; {source classe, jar, directory ...}
      * </pre>
-     * 
+     * <p/>
      * If directory names or jar files are given, all classes in that container are processed. It is
-     * perfectly fine to specify the same directory for source and output like this: 
+     * perfectly fine to specify the same directory for source and output like this:
      * <pre>
      *    java kilim.tools.Weaver -d ./classes ./classes
      * </pre>
-     * Ensure that all classes to be woven are in the classpath. The output directory does not have to be 
+     * Ensure that all classes to be woven are in the classpath. The output directory does not have to be
      * in the classpath during weaving.
-     *   
+     *
      * @see #weave(List) for run-time weaving.
      */
     public static void main(String[] args) throws IOException {
@@ -57,8 +57,9 @@ public class Weaver {
         for (String name : parseArgs(args)) {
             try {
                 if (name.endsWith(".class")) {
-                    if (exclude(name))
+                    if (exclude(name)) {
                         continue;
+                    }
                     currentName = name;
                     weaveFile(name, new BufferedInputStream(new FileInputStream(name)), detector);
                 } else if (name.endsWith(".jar")) {
@@ -67,8 +68,9 @@ public class Weaver {
                         if (currentName.endsWith(".class")) {
                             currentName = currentName.substring(0, currentName.length() - 6)
                                     .replace('/', '.');
-                            if (exclude(currentName))
+                            if (exclude(currentName)) {
                                 continue;
+                            }
                             weaveFile(currentName, fe.getInputStream(), detector);
                         }
                     }
@@ -76,8 +78,9 @@ public class Weaver {
                     for (FileLister.Entry fe : new FileLister(name)) {
                         currentName = fe.getFileName();
                         if (currentName.endsWith(".class")) {
-                            if (exclude(currentName))
+                            if (exclude(currentName)) {
                                 continue;
+                            }
                             weaveFile(currentName, fe.getInputStream(), detector);
                         }
                     }
@@ -138,7 +141,9 @@ public class Weaver {
         }
     }
 
-    /** public only for testing purposes */
+    /**
+     * public only for testing purposes
+     */
     public static void weaveClass2(String name, Detector detector) throws IOException {
         try {
             ClassWeaver cw = new ClassWeaver(name, detector);
@@ -174,8 +179,9 @@ public class Weaver {
         className = outputDir + File.separatorChar + className + ".class";
         if (ci.className.startsWith("kilim.S_")) {
             // Check if we already have that file
-            if (new File(className).exists())
+            if (new File(className).exists()) {
                 return;
+            }
         }
         FileOutputStream fos = new FileOutputStream(className);
         fos.write(ci.bytes);
@@ -207,8 +213,9 @@ public class Weaver {
     }
 
     static ArrayList<String> parseArgs(String[] args) throws IOException {
-        if (args.length == 0)
+        if (args.length == 0) {
             help();
+        }
 
         ArrayList<String> ret = new ArrayList<String>(args.length);
         String regex = null;
@@ -241,7 +248,7 @@ public class Weaver {
     public Weaver() {
         this(Thread.currentThread().getContextClassLoader());
     }
-    
+
     public Weaver(ClassLoader cl) {
         mirrors = new CachedClassMirrors(cl);
         detector = new Detector(mirrors);
@@ -261,22 +268,20 @@ public class Weaver {
      * Analyzes the list of supplied classes and inserts Kilim-related bytecode if necessary. If a
      * supplied class is dependent upon another class X, it is the caller's responsibility to ensure
      * that X is either in the classpath, or loaded by the context classloader, or has been seen in
-     * an earlier invocation of weave().  
-     * 
+     * an earlier invocation of weave().
+     * <p/>
      * Since weave() remembers method signatures from earlier invocations, the woven classes do not
-     * have to be classloaded to help future invocations of weave. 
-     * 
+     * have to be classloaded to help future invocations of weave.
+     * <p/>
      * If two classes A and B are not in the classpath, and are mutually recursive, they can be woven
      * only if supplied in the same input list.
-     *  
+     * <p/>
      * This method is thread safe.
-     * 
+     *
      * @param classes A list of (className, byte[]) pairs. The first part is a fully qualified class
-     *            name, and the second part is the bytecode for the class.
-     * 
+     *                name, and the second part is the bytecode for the class.
      * @return A list of (className, byte[]) pairs. Some of the classes may or may not have been
-     *         modified, and new ones may be added.
-     * 
+     * modified, and new ones may be added.
      * @throws KilimException
      */
     public List<ClassInfo> weave(List<ClassInfo> classes) throws KilimException {

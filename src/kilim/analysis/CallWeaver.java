@@ -4,36 +4,18 @@
  * specified in the file "License"
  */
 package kilim.analysis;
-import static kilim.Constants.ALOAD_0;
-import static kilim.Constants.ASTORE_0;
-import static kilim.Constants.DLOAD_0;
-import static kilim.Constants.DSTORE_0;
-import static kilim.Constants.D_BOOLEAN;
-import static kilim.Constants.D_BYTE;
-import static kilim.Constants.D_CHAR;
-import static kilim.Constants.D_DOUBLE;
-import static kilim.Constants.D_FIBER;
-import static kilim.Constants.D_FLOAT;
-import static kilim.Constants.D_INT;
-import static kilim.Constants.D_LONG;
-import static kilim.Constants.D_NULL;
-import static kilim.Constants.D_OBJECT;
-import static kilim.Constants.D_SHORT;
-import static kilim.Constants.D_STATE;
-import static kilim.Constants.D_VOID;
-import static kilim.Constants.D_UNDEFINED;
-import static kilim.Constants.FIBER_CLASS;
-import static kilim.Constants.FLOAD_0;
-import static kilim.Constants.FSTORE_0;
-import static kilim.Constants.ILOAD_0;
-import static kilim.Constants.ISTORE_0;
-import static kilim.Constants.LLOAD_0;
-import static kilim.Constants.LSTORE_0;
-import static kilim.Constants.STATE_CLASS;
-import static kilim.analysis.VMType.TOBJECT;
-import static kilim.analysis.VMType.loadVar;
-import static kilim.analysis.VMType.storeVar;
-import static kilim.analysis.VMType.toVmType;
+
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.TableSwitchInsnNode;
+
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Collections;
+
+import static kilim.Constants.*;
+import static kilim.analysis.VMType.*;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ARETURN;
@@ -77,15 +59,6 @@ import static org.objectweb.asm.Opcodes.PUTFIELD;
 import static org.objectweb.asm.Opcodes.RETURN;
 import static org.objectweb.asm.Opcodes.SIPUSH;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.Collections;
-
-import org.objectweb.asm.tree.LabelNode;
-import org.objectweb.asm.tree.TableSwitchInsnNode;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.tree.MethodInsnNode;
-
 /**
  * This class produces all the code associated with a specific pausable method
  * invocation. There are three distinct chunks of code.
@@ -94,44 +67,42 @@ import org.objectweb.asm.tree.MethodInsnNode;
  * switch statement (switch fiber.pc), which is the "rewind" portion. This stage
  * pushes in (mostly) dummy values on the stack and jumps to the next method
  * invocation in the cycle. </li>
- * 
+ * <p/>
  * <li> <b>Call</b>: The actual call. We push fiber as the last argument to the
  * pausable method (by calling fiber.down()), before making the call. </li>
- * 
+ * <p/>
  * <li> <b>Post-call</b> The bulk of the code produced by this object. </li>
  * </ol>
- * <p>
- * 
+ * <p/>
+ * <p/>
  * An explanation of some terms used in the code may be useful.
- * 
+ * <p/>
  * Much of this code concerns itself with storing and retrieving values from/to
  * the stack and the local variables. The stack consists of three logical parts:<br>
- * 
+ * <p/>
  * <pre>
  *   +--------------+----------------------+---------------+
  *   | Stack bottom | callee obj reference | args for call | (Top of stack)
  *   +--------------+----------------------+---------------+
  * </pre>
- * 
+ * <p/>
  * The callee's object reference and the arguments at the top of stack are
  * consumed by the method invocation. If the call is static, there is no object
  * reference, of course. The bottom of the stack (which may also be empty)
  * refers to the part of the stack that is left over once the args are consumed.
  * This is the part that we need to save if we have to yield.
- * <p>
- * 
+ * <p/>
+ * <p/>
  * As for the local variables, we are interested in saving var 0 (the "this"
  * pointer) and all other variables that the flow analysis has shown to be
  * live-in, that is, is used downstream of the call. Typically, only about 30%
  * of all available vars are actually used downstream, so we use the rest for
  * temporary storage.
- * <p>
- * 
+ * <p/>
+ *
  * @see #genRewind(MethodVisitor)
  * @see #genCall(MethodVisitor)
  * @see #genPostCall(MethodVisitor)
-
- * 
  */
 
 public class CallWeaver {
@@ -143,32 +114,35 @@ public class CallWeaver {
     /**
      * The basic block that calls the pausable method
      */
-    BasicBlock           bb;
+    BasicBlock bb;
 
-    private LabelNode    resumeLabel;
+    private LabelNode resumeLabel;
 
-    LabelNode            callLabel;
+    LabelNode callLabel;
 
-    private ValInfoList  valInfoList;
+    private ValInfoList valInfoList;
 
     /**
      * varUsage[i] is true if the i-th var is taken. We don't touch the first
      * maxLocals vars. It is used for minimizing usage of extra vars.
      */
-    BitSet               varUsage;
+    BitSet varUsage;
 
     /**
-     * number of local registers required. 
+     * number of local registers required.
      */
-    int                  numVars;
+    int numVars;
 
-    /** The canoncial name of the state class responsible for storing
+    /**
+     * The canoncial name of the state class responsible for storing
      * the state (@see kilim.State)
      */
-    private String       stateClassName;
+    private String stateClassName;
 
-    /** Memoized version of getNumArgs() */
-    int                  numArgs = -1;
+    /**
+     * Memoized version of getNumArgs()
+     */
+    int numArgs = -1;
 
     public CallWeaver(MethodWeaver mw, BasicBlock aBB) {
         methodWeaver = mw;
@@ -176,8 +150,9 @@ public class CallWeaver {
         callLabel = bb.startLabel;
         varUsage = new BitSet(2 * bb.flow.maxLocals);
         resumeLabel = bb.flow.getLabelAt(bb.startPos + 1);
-        if (resumeLabel == null)
+        if (resumeLabel == null) {
             resumeLabel = new LabelNode();
+        }
         assignRegisters();
         stateClassName = createStateClass();
         methodWeaver.ensureMaxStack(getNumBottom() + 3); // 
@@ -186,12 +161,12 @@ public class CallWeaver {
     /**
      * The basic block's frame tells us the number of parameters in the stack
      * and which local variables are needed later on.
-     * 
+     * <p/>
      * If the method is pausable, we'll need the bottom part of the stack and
      * the object reference from the top part of the stack to be able to resume
      * it. We don't need to worry about the arguments, because they will be
      * saved (if needed) in the _called_ method's state.
-     * 
+     * <p/>
      * The "this" arg (var0) is given special treatment. It is always saved in
      * all states, so it doesn't count as "data".
      */
@@ -200,7 +175,7 @@ public class CallWeaver {
         MethodWeaver mw = methodWeaver;
         varUsage.set(mw.getFiberVar());
         numVars = mw.getFiberVar() + 1; // knowing fiberVar is beyond anything
-                                        // that's used
+        // that's used
         mw.ensureMaxVars(numVars);
         Usage u = bb.usage;
         valInfoList = new ValInfoList();
@@ -283,22 +258,22 @@ public class CallWeaver {
     /**
      * <pre>
      * The following template is produced in the method's prelude for each
-     * pausable method. 
-     * F_REWIND: 
+     * pausable method.
+     * F_REWIND:
      *   for each bottom stack operand
      *      introduce a dummy constant of the appropriate type.
      *         (iconst_0, aconst_null, etc.)
-     *      if the call is not static, 
+     *      if the call is not static,
      *         we need the called object's object reference
      *         ask the next state in the fiber's list
      *   goto F_CALL: // jump to the invocation site.
      * </pre>
-     * 
+     *
      * @param mv
      */
     void genRewind(MethodVisitor mv) {
         Frame f = bb.startFrame;
-        
+
         // The last parameter to the method is fiber, but the original
         // code doesn't know that and will use up that slot as it
         // pleases. If we are going to jump directly to the basicblock
@@ -369,17 +344,18 @@ public class CallWeaver {
      * pausable method. We accomplish both of these objectives by having
      * fiber.down() do its book-keeping and return fiber, which is left on the
      * stack before the call is made.
-     * 
+     * <p/>
      * <pre>
-     *             
-     *            F_CALL: 
+     *
+     *            F_CALL:
      *               push fiber.down()
-     *               invoke[virtual|static] classname/method modifiedDesc 
+     *               invoke[virtual|static] classname/method modifiedDesc
      * </pre>
-     * 
+     *
      * @param mv
      */
     static String fiberArg = D_FIBER + ')';
+
     void genCall(MethodVisitor mv) {
         mv.visitLabel(callLabel.getLabel());
         loadVar(mv, TOBJECT, methodWeaver.getFiberVar());
@@ -393,14 +369,14 @@ public class CallWeaver {
         }
         mi.accept(mv);
     }
-    
+
     /**
      * After the pausable method call is over, we have four possibilities. The
      * called method yielded, or it returned normally. Orthogonally, we have
      * saved state or not. fiber.up() returns the combined status
-     * 
-?     * <pre>
-     *                     
+     * <p/>
+     * ?     * <pre>
+     * <p/>
      * switch (fiber.up()) {
      *    default:
      *    0: goto RESUME; // Not yielding , no State --  resume normal operations
@@ -420,9 +396,8 @@ public class CallWeaver {
      * RESUME:
      *     ... original code
      * </pre>
-     * 
+     *
      * @param mv
-     * 
      */
     void genPostCall(MethodVisitor mv) {
         loadVar(mv, TOBJECT, methodWeaver.getFiberVar());
@@ -430,8 +405,8 @@ public class CallWeaver {
         LabelNode restoreLabel = new LabelNode();
         LabelNode saveLabel = new LabelNode();
         LabelNode unwindLabel = new LabelNode();
-        LabelNode[] labels = new LabelNode[] { resumeLabel, restoreLabel, saveLabel,
-                unwindLabel };
+        LabelNode[] labels = new LabelNode[]{resumeLabel, restoreLabel, saveLabel,
+                unwindLabel};
         new TableSwitchInsnNode(0, 3, resumeLabel, labels).accept(mv);
         genSave(mv, saveLabel);
         genUnwind(mv, unwindLabel);
@@ -444,7 +419,7 @@ public class CallWeaver {
      * a previous call. There's nothing meaningful to do except keep the
      * verifier happy. Pop the bottom stack, then return a dummy return value
      * (if this method -- note: not the called method -- returns a value)
-     * 
+     *
      * @param mv
      */
     private void genUnwind(MethodVisitor mv, LabelNode unwindLabel) {
@@ -483,14 +458,14 @@ public class CallWeaver {
     /**
      * Yielding, but state hasn't been captured yet. We create a state object
      * and save each object in valInfoList in its corresponding field.
-     * 
+     * <p/>
      * Note that we save each stack item into a scratch register before loading
      * it into a field. The reason is that we need to get the State ref under
      * the stack item before we can do a putfield. The alternative is to load
      * the State item, then do a swap or a dup_x2;pop (depending on the value's
      * category). We'll go with the earlier approach because stack manipulations
      * don't seem to perform as well in the current crop of JVMs.
-     * 
+     *
      * @param mv
      */
     private void genSave(MethodVisitor mv, LabelNode saveLabel) {
@@ -498,7 +473,7 @@ public class CallWeaver {
 
         Frame f = bb.startFrame;
         // pop return value if any.
-        String retType = getReturnType(); 
+        String retType = getReturnType();
         if (retType != D_VOID) {
             // Yielding, so the return value from the called
             // function is a dummy value
@@ -563,8 +538,9 @@ public class CallWeaver {
         // Now load up registers into fields
         for (ValInfo vi : valInfoList) {
             // Ignore values on stack
-            if (vi.var == -1)
+            if (vi.var == -1) {
                 continue;
+            }
             // aload state var
             // xload <var>
             loadVar(mv, TOBJECT, stateVar);
@@ -597,24 +573,24 @@ public class CallWeaver {
      * restore from state before resuming. This is slightly more work than
      * saving state, because we have to restore constants and duplicates too.
      * <b>
-     * 
+     * <p/>
      * Note that the return value (if any) has a real value, which is why it
      * needs to be saved away before we can get access to the bottom elements to
      * pop them out.
-     * 
+     * <p/>
      * <pre>
      *           If there is anything at the bottom save return value in scratch register
      *                 pop unnecessary bottom stuff.
-     *          
-     *           load fiber.curState 
-     *           cast to specific state (if necessary) 
+     *
+     *           load fiber.curState
+     *           cast to specific state (if necessary)
      *           astore in scratch &lt;stateVar&gt;
-     *          
-     *          for each value in frame.var 
-     *               if val is constant or is in valInfoList, 
-     *                   push constant or load field (appropriately) 
+     *
+     *          for each value in frame.var
+     *               if val is constant or is in valInfoList,
+     *                   push constant or load field (appropriately)
      *          for each value in bottom stack
-     *                 restore value similar to above 
+     *                 restore value similar to above
      *          restore return value if any from scratch register
      * </pre>
      */
@@ -635,7 +611,7 @@ public class CallWeaver {
                 storeVar(mv, retctype, retVar);
             }
             // pop dummy values from stack bottom
-            for (int i = numBottom-1; i >= 0; i--) {
+            for (int i = numBottom - 1; i >= 0; i--) {
                 Value v = f.getStack(i);
                 int insn = v.isCategory1() ? POP : POP2;
                 mv.visitInsn(insn);
@@ -714,8 +690,9 @@ public class CallWeaver {
         int len = f.getMaxLocals();
         int i = bb.flow.isStatic() ? 0 : 1;
         for (; i < len; i++) {
-            if (!u.isLiveIn(i))
+            if (!u.isLiveIn(i)) {
                 continue;
+            }
             Value v = f.getLocal(i);
             int vmt = VMType.toVmType(v.getTypeDesc());
             if (v.isConstant()) {
@@ -748,7 +725,7 @@ public class CallWeaver {
     /**
      * We have loaded a value of one of the five VM types into the stack and we
      * need to cast it to the value's type, if necessary
-     * 
+     *
      * @param mv
      * @param v
      */
@@ -763,17 +740,19 @@ public class CallWeaver {
                 mv.visitTypeInsn(CHECKCAST, TypeDesc.getInternalName(valType));
                 break;
             case VMType.TINT:
-                if (valType == D_INT)
+                if (valType == D_INT) {
                     return;
+                }
                 int insn = 0;
-                if (valType == D_SHORT)
+                if (valType == D_SHORT) {
                     insn = I2S;
-                else if (valType == D_BYTE)
+                } else if (valType == D_BYTE) {
                     insn = I2B;
-                else if (valType == D_CHAR)
+                } else if (valType == D_CHAR) {
                     insn = I2C;
-                else
+                } else {
                     assert valType == D_BOOLEAN;
+                }
                 mv.visitInsn(insn);
                 break;
             default:
@@ -802,12 +781,13 @@ public class CallWeaver {
         } else if (c instanceof Float) {
             Float f = ((Float) c).floatValue();
             int insn = 0;
-            if (f == 0.0)
+            if (f == 0.0) {
                 insn = FCONST_0;
-            else if (f == 1.0)
+            } else if (f == 1.0) {
                 insn = FCONST_1;
-            else if (f == 2.0)
+            } else if (f == 2.0) {
                 insn = FCONST_2;
+            }
             if (insn != 0) {
                 mv.visitInsn(insn);
                 return;
@@ -815,10 +795,11 @@ public class CallWeaver {
         } else if (c instanceof Long) {
             Long l = ((Long) c).longValue();
             int insn = 0;
-            if (l == 0L)
+            if (l == 0L) {
                 insn = LCONST_0;
-            else if (l == 1L)
+            } else if (l == 1L) {
                 insn = LCONST_1;
+            }
             if (insn != 0) {
                 mv.visitInsn(insn);
                 return;
@@ -826,10 +807,11 @@ public class CallWeaver {
         } else if (c instanceof Double) {
             Double d = ((Double) c).doubleValue();
             int insn = 0;
-            if (d == 0.0)
+            if (d == 0.0) {
                 insn = DCONST_0;
-            else if (d == 1.0)
+            } else if (d == 1.0) {
                 insn = DCONST_1;
+            }
             if (insn != 0) {
                 mv.visitInsn(insn);
                 return;
@@ -840,13 +822,13 @@ public class CallWeaver {
     }
 
     private String createStateClass() {
-        return valInfoList.size() == 0 ? STATE_CLASS :  
-            methodWeaver.createStateClass(valInfoList);
+        return valInfoList.size() == 0 ? STATE_CLASS :
+                methodWeaver.createStateClass(valInfoList);
     }
 
     private int allocVar(int size) {
         int var;
-        for (var = 0;; var++) {
+        for (var = 0; ; var++) {
             // if the var'th local is not set (if double, check the next word
             // too)
             if (!varUsage.get(var)) {
@@ -866,8 +848,9 @@ public class CallWeaver {
     }
 
     private void releaseVar(int var, int size) {
-        if (var == -1)
+        if (var == -1) {
             return;
+        }
         varUsage.clear(var);
         if (size == 2) {
             varUsage.clear(var + 1);
@@ -884,18 +867,18 @@ class ValInfo implements Comparable<ValInfo> {
      * The var to which the value belongs. It remains undefined if it is a stack
      * item.
      */
-    int    var = -1;
+    int var = -1;
 
     /**
      * The value to hold. This gives us information about the type, whether the
      * value is duplicated and whether it is a constant value.
      */
-    Value  val;
+    Value val;
 
     /**
      * The type of value boiled down to one of the canonical types.
      */
-    int    vmt;
+    int vmt;
 
     /**
      * Names of the fields in the state var: "f0", "f1", etc, according to their
@@ -913,16 +896,21 @@ class ValInfo implements Comparable<ValInfo> {
     }
 
     public int compareTo(ValInfo that) {
-        if (this == that)
+        if (this == that) {
             return 0;
-        if (this.vmt < that.vmt)
+        }
+        if (this.vmt < that.vmt) {
             return -1;
-        if (this.vmt > that.vmt)
+        }
+        if (this.vmt > that.vmt) {
             return 1;
-        if (this.var < that.var)
+        }
+        if (this.var < that.var) {
             return -1;
-        if (this.var > that.var)
+        }
+        if (this.var > that.var) {
             return 1;
+        }
         return 0;
     }
 }
@@ -938,8 +926,9 @@ class ValInfoList extends ArrayList<ValInfo> {
     public int indexOf(Value v) {
         int len = size();
         for (int i = 0; i < len; i++) {
-            if (get(i).val == v)
+            if (get(i).val == v) {
                 return i;
+            }
         }
         return -1;
     }
@@ -952,39 +941,38 @@ class ValInfoList extends ArrayList<ValInfo> {
 
 class VMType {
 
-    static final int      TOBJECT   = 0;
+    static final int TOBJECT = 0;
 
-    static final int      TINT      = 1;
+    static final int TINT = 1;
 
-    static final int      TLONG     = 2;
+    static final int TLONG = 2;
 
-    static final int      TDOUBLE   = 3;
+    static final int TDOUBLE = 3;
 
-    static final int      TFLOAT    = 4;
+    static final int TFLOAT = 4;
 
-    static final int[]    constInsn = { ACONST_NULL, ICONST_0, LCONST_0,
-            DCONST_0, FCONST_0     };
+    static final int[] constInsn = {ACONST_NULL, ICONST_0, LCONST_0,
+            DCONST_0, FCONST_0};
 
-    static final int[]    loadInsn  = { ALOAD, ILOAD, LLOAD, DLOAD, FLOAD };
+    static final int[] loadInsn = {ALOAD, ILOAD, LLOAD, DLOAD, FLOAD};
 
-    static final int[]    retInsn   = { ARETURN, IRETURN, LRETURN, DRETURN,
-            FRETURN                };
+    static final int[] retInsn = {ARETURN, IRETURN, LRETURN, DRETURN,
+            FRETURN};
 
+    static final int[] ldInsn = {ALOAD_0, ILOAD_0, LLOAD_0, DLOAD_0,
+            FLOAD_0};
 
-    static final int[]    ldInsn    = { ALOAD_0, ILOAD_0, LLOAD_0, DLOAD_0,
-            FLOAD_0                };
+    static final int[] stInsn = {ASTORE_0, ISTORE_0, LSTORE_0, DSTORE_0,
+            FSTORE_0};
 
-    static final int[]    stInsn    = { ASTORE_0, ISTORE_0, LSTORE_0, DSTORE_0,
-            FSTORE_0               };
+    static final int[] storeInsn = {ASTORE, ISTORE, LSTORE, DSTORE, FSTORE};
 
-    static final int[]    storeInsn = { ASTORE, ISTORE, LSTORE, DSTORE, FSTORE };
+    static final String[] fieldDesc = {D_OBJECT, D_INT, D_LONG, D_DOUBLE,
+            D_FLOAT};
 
-    static final String[] fieldDesc = { D_OBJECT, D_INT, D_LONG, D_DOUBLE,
-            D_FLOAT                };
+    static final String[] abbrev = {"O", "I", "L", "D", "F"};
 
-    static final String[] abbrev    = { "O", "I", "L", "D", "F" };
-
-    static final int[]    category  = { 1, 1, 2, 2, 1 };
+    static final int[] category = {1, 1, 2, 2, 1};
 
     static int toVmType(String type) {
         switch (type.charAt(0)) {
@@ -1017,12 +1005,12 @@ class VMType {
     static void loadVar(MethodVisitor mv, int vmt, int var) {
         assert var >= 0 : "Got var = " + var;
         // ASM4.1 doesn't like short-form ALOAD_n instructions. Instead, we use ALOAD n. 
-        
+
 //        if (var < 4) {
 //            // short instructions like ALOAD_n exist for n = 0 .. 4
 //            mv.visitInsn(ldInsn[vmt] + var);
 //        } else {
-            mv.visitVarInsn(loadInsn[vmt], var);
+        mv.visitVarInsn(loadInsn[vmt], var);
 //        }
     }
 
@@ -1032,7 +1020,7 @@ class VMType {
 //            // short instructions like ALOAD_n exist for n = 0 .. 4
 //            mv.visitInsn(stInsn[vmt] + var);
 //        } else {
-            mv.visitVarInsn(storeInsn[vmt], var);
+        mv.visitVarInsn(storeInsn[vmt], var);
 //        }
     }
 }

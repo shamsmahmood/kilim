@@ -1,17 +1,17 @@
 package kilim.mirrors;
 
+import kilim.KilimClassLoader;
+import org.objectweb.asm.Type;
+
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import kilim.KilimClassLoader;
-
-import org.objectweb.asm.Type;
-
 /**
  * This class provides the Mirrors facade over a set of Class objects
- * @see Mirrors 
+ *
+ * @see Mirrors
  */
 
 public class RuntimeClassMirrors implements Mirrors {
@@ -47,8 +47,9 @@ public class RuntimeClassMirrors implements Mirrors {
 
     @Override
     public ClassMirror mirror(Class<?> clazz) {
-        if (clazz == null)
+        if (clazz == null) {
             return null;
+        }
         return make(clazz);
     }
 
@@ -56,17 +57,18 @@ public class RuntimeClassMirrors implements Mirrors {
     public ClassMirror mirror(String className, byte[] bytecode) {
         try {
             return classForName(className);
-        } catch (ClassMirrorNotFoundException ignore) {}
+        } catch (ClassMirrorNotFoundException ignore) {
+        }
         return null;
     }
 
     /**
      * Like classForName, but only if the class is already loaded. This does not force loading of a
      * class.
-     * 
+     *
      * @param className
      * @return null if className not loaded, else a RuntimeClassMirror to represent the loaded
-     *         class.
+     * class.
      */
     public ClassMirror loadedClassForName(String className) {
         Class<?> c = classLoader.getLoadedClass(className);
@@ -124,8 +126,8 @@ class RuntimeMethodMirror implements MethodMirror {
 class RuntimeClassMirror implements ClassMirror {
 
     private final Class<?> clazz;
-    private MethodMirror[] methods; 
-    
+    private MethodMirror[] methods;
+
     public RuntimeClassMirror(Class<?> clazz) {
         this.clazz = clazz;
     }
@@ -156,18 +158,18 @@ class RuntimeClassMirror implements ClassMirror {
     @Override
     public MethodMirror[] getDeclaredMethods() {
         if (methods == null) {
-           Method[] declaredMethods = clazz.getDeclaredMethods();
-           methods = new MethodMirror[declaredMethods.length];
-           for (int i = 0; i < declaredMethods.length; i++) {
-               methods[i] = new RuntimeMethodMirror(declaredMethods[i]);
-           }
+            Method[] declaredMethods = clazz.getDeclaredMethods();
+            methods = new MethodMirror[declaredMethods.length];
+            for (int i = 0; i < declaredMethods.length; i++) {
+                methods[i] = new RuntimeMethodMirror(declaredMethods[i]);
+            }
         }
         return methods;
     }
 
     @Override
     public String[] getInterfaces() {
-        Class<?>[] ifs = clazz.getInterfaces(); 
+        Class<?>[] ifs = clazz.getInterfaces();
         String[] result = new String[ifs.length];
         for (int i = 0; i < result.length; i++) {
             result[i] = ifs[i].getName();

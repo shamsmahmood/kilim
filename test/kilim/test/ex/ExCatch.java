@@ -23,15 +23,26 @@ public class ExCatch extends ExYieldBase {
         doPause = true;
         test();
     }
-    
+
     private void test() throws Pausable {
-        switch(testCase) {
-            case 0: normalCatch(); break; 
-            case 1: pausableCatch(); break;
-            case 2: nestedPausableCatch(); break;
-            case 3: tryCatchFinally(); break;
-            case 4: pausableBeforeCatch(); break;
-            default: throw new IllegalStateException("Unknown test case: " + testCase);
+        switch (testCase) {
+            case 0:
+                normalCatch();
+                break;
+            case 1:
+                pausableCatch();
+                break;
+            case 2:
+                nestedPausableCatch();
+                break;
+            case 3:
+                tryCatchFinally();
+                break;
+            case 4:
+                pausableBeforeCatch();
+                break;
+            default:
+                throw new IllegalStateException("Unknown test case: " + testCase);
         }
     }
 
@@ -50,12 +61,12 @@ public class ExCatch extends ExYieldBase {
         verify(sa);
         verify(s);
     }
-    
+
     void pausableCatch() throws Pausable {
         double d = fd;
-        String  s = fs;
+        String s = fs;
         String[][] sa = fa;
-        long   l = fl;
+        long l = fl;
         try {
             pausable(d);
 //            throw new ExException("10");
@@ -77,33 +88,42 @@ public class ExCatch extends ExYieldBase {
     void pausableBeforeCatch() throws Pausable {
         int foo = 0;
         Task.sleep(1);
-        if (foo != 0) throw new RuntimeException("Expected 0");
-        
+        if (foo != 0) {
+            throw new RuntimeException("Expected 0");
+        }
+
         foo = 1;
         Task.sleep(1);
-        if (foo != 1) throw new RuntimeException("Expected 1");
-        
+        if (foo != 1) {
+            throw new RuntimeException("Expected 1");
+        }
+
         foo = 2;
         Task.sleep(1);
-        if (foo != 2) throw new RuntimeException("Expected 2");
-        
+        if (foo != 2) {
+            throw new RuntimeException("Expected 2");
+        }
+
         try {
             foo = 3;
             throwEx();
         } catch (Throwable t) {
-            if (foo != 3) throw new RuntimeException("Expected 3");
+            if (foo != 3) {
+                throw new RuntimeException("Expected 3");
+            }
         }
     }
+
     private static void throwEx() throws Pausable {
         Task.sleep(1);
         throw new RuntimeException();
     }
 
     void tryCatchFinally() throws Pausable {
-        short sh = fsh; 
-        String  s = fs;
-        double  d = fd;
-        long   l = fl;
+        short sh = fsh;
+        String s = fs;
+        double d = fd;
+        long l = fl;
         try {
             try {
                 pausable(d);
@@ -126,16 +146,16 @@ public class ExCatch extends ExYieldBase {
         verify(l);
     }
 
-    
     void nestedPausableCatch() throws Pausable {
         double d = fd;
-        String  s = fs;
+        String s = fs;
         String[][] sa = fa;
-        long   l = fl;
+        long l = fl;
         try {
             throw new ExException("10");
         } catch (final ExException eye) {
-            String es = null;;
+            String es = null;
+            ;
             try {
                 throw new ExException("10");
             } catch (Exception e) {
@@ -154,7 +174,6 @@ public class ExCatch extends ExYieldBase {
         verify(s);
         verify(l);
     }
-
 
     private void pausable(double d) throws ExException, Pausable {
         if (doPause) {

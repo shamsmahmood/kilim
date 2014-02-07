@@ -1,5 +1,9 @@
 package kilim.tools;
 
+import kilim.analysis.ClassInfo;
+
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -9,11 +13,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
-
-import kilim.analysis.ClassInfo;
 
 /**
  * Simple utility class to invoke the java compiler.
@@ -25,19 +24,18 @@ public class Javac {
      * Given a list of file-scope java code (equivalent to a .java file, including package and
      * import declarations), compile() invokes javac to compile them, produce classfiles and return
      * a list of <className, byte[]> pairs.
-     * 
+     * <p/>
      * compile() dumps the source strings into their respective files, has javac compile them, then
      * reads back the equivalent class files. The name of the source file is gleaned from the string
      * itself; a string containing "public class Foo" is stored in tmpDir/Foo.java (where tmpDir is
      * a temporary directory that's deleted after the compilation), and if no public class or
      * interface is found, the name of the first class in the string is used.
-     * 
-     * Note that the list of returned classes may be larger than 
-     * 
-     * @param srcCodes
-     *            . List of strings.
+     * <p/>
+     * Note that the list of returned classes may be larger than
+     *
+     * @param srcCodes . List of strings.
      * @return List<className,byte[]>. className is fully qualified, and byte[] contains the
-     *         bytecode of the class.
+     * bytecode of the class.
      * @throws IOException
      */
     public static List<ClassInfo> compile(List<String> srcCodes) throws IOException {
@@ -49,7 +47,7 @@ public class Javac {
         File classDir = new File(rootDir.getAbsolutePath() + File.separatorChar + "classes");
         classDir.mkdir(); // "<rootDir>/classes"
 
-        String options[] = { "-d", classDir.getAbsolutePath() };
+        String options[] = {"-d", classDir.getAbsolutePath()};
 
         String args[] = new String[options.length + srcCodes.size()];
         System.arraycopy(options, 0, args, 0, options.length);
@@ -83,15 +81,16 @@ public class Javac {
 
     private static SourceInfo getSourceInfo(String srcCode) {
         Matcher m = publicClassNameRegexp.matcher(srcCode);
-        if (m.find())
+        if (m.find()) {
             return new SourceInfo(m.group(1), srcCode);
-        else {
+        } else {
             m = classNameRegexp.matcher(srcCode);
-            if (m.find())
+            if (m.find()) {
                 return new SourceInfo(m.group(1), srcCode);
-            else
+            } else {
                 throw new IllegalArgumentException(
                         "No class or interface definition found in src: \n'" + srcCode + "'");
+            }
         }
     }
 
@@ -149,8 +148,9 @@ public class Javac {
         int off = 0;
         while (len > 0) {
             int n = fis.read(buf, off, len);
-            if (n == -1)
+            if (n == -1) {
                 throw new IOException("Unexpected EOF reading " + f.getAbsolutePath());
+            }
             off += n;
             len -= n;
         }
