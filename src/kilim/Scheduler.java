@@ -39,15 +39,13 @@ public class Scheduler {
     }
 
     protected Scheduler() {
+        // we do not want to use kilim schedulers, disallow instantiation
+        throw new IllegalStateException("Unexpected use of kilim schedulers");
     }
 
-    public Scheduler(int numThreads) {
-        for (int i = 0; i < numThreads; i++) {
-            WorkerThread wt = new WorkerThread(this);
-            allThreads.add(wt);
-            addWaitingThread(wt);
-            wt.start();
-        }
+    public Scheduler(final int numThreads) {
+        // we do not want to use kilim schedulers, disallow instantiation
+        throw new IllegalStateException("Unexpected use of kilim schedulers");
     }
 
     void addWaitingThread(WorkerThread wt) {
