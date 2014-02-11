@@ -16,11 +16,14 @@ public class Ex_vs_Ret {
         final int depth = 10;
 
         // JIT Warmup ===========================================
-        for (int i = 0; i < 1000; i++) ret(depth);
+        for (int i = 0; i < 1000; i++) {
+            ret(depth);
+        }
         for (int i = 0; i < 1000; i++) {
             try {
                 ex(depth);
-            } catch (FastEx ignore) {}
+            } catch (FastEx ignore) {
+            }
         }
 
         long start = System.currentTimeMillis();
@@ -28,30 +31,31 @@ public class Ex_vs_Ret {
             ret(depth);
         }
         long elapsed = System.currentTimeMillis() - start;
-        System.out.println("Iterations = : " +ntimes + ", stack depth = " + depth);
+        System.out.println("Iterations = : " + ntimes + ", stack depth = " + depth);
         System.out.println("ret ms: " + elapsed);
 
         start = System.currentTimeMillis();
         for (int i = 0; i < ntimes; i++) {
             try {
                 ex(depth);
-            } catch (FastEx fe) {}
+            } catch (FastEx fe) {
+            }
         }
         elapsed = System.currentTimeMillis() - start;
         System.out.println("ex : " + elapsed);
     }
-    
+
     static void ret(int depth) {
         if (depth != 0) {
-            ret(depth-1);
+            ret(depth - 1);
         }
     }
-    
+
     static void ex(int depth) throws FastEx {
         if (depth == 0) {
             throw new FastEx();
         }
-        ex(depth-1);
+        ex(depth - 1);
     }
 }
 

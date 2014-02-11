@@ -8,13 +8,12 @@ This example creates n tasks and has each send a message to the
 others. It sends the same structure (and number of messages) as the
 kilim/bench/BigPingPong example.
 */
-import scala.actors._
-import scala.actors.Actor._
+
 
 object BigPingPong {
   var beginTime: long = 0
 
-  def main(args : Array[String]): Unit = {
+  def main(args: Array[String]): Unit = {
     val nTasks = Integer.parseInt(args(0))
     var i = nTasks
     var tasks: Array[Ping] = new Array[Ping](nTasks)
@@ -23,7 +22,7 @@ object BigPingPong {
     cTask.start()
 
     beginTime = System.currentTimeMillis()
-    for (val i <- 0 to nTasks-1) {
+    for (val i <- 0 to nTasks - 1) {
       tasks(i) = new Ping(i)
     }
     for (val t <- tasks) {
@@ -34,14 +33,15 @@ object BigPingPong {
 }
 
 abstract class Msg
-case class PingMsg(from :int ) extends Msg
+
+case class PingMsg(from: int) extends Msg
 
 class Ping(i: int) extends Actor {
-  var id : int = i
+  var id: int = i
   var tasks: Array[Ping] = Array()
-  var ctask : Collector = null
+  var ctask: Collector = null
 
-  def setOthers(others: Array[Ping], ct : Collector) {
+  def setOthers(others: Array[Ping], ct: Collector) {
     ctask = ct
     tasks = others
   }
@@ -50,28 +50,28 @@ class Ping(i: int) extends Actor {
     System.out.println("" + id + " n = " + tasks.length);
     for (val t <- tasks) {
       if (t != this) {
-	t ! new PingMsg(id)
-	receive {
-	  case PingMsg(from) => { 
-	    System.out.println ("" + from + " -> " + id);
-	  }
-	}
+        t ! new PingMsg(id)
+        receive {
+          case PingMsg(from) => {
+            System.out.println("" + from + " -> " + id);
+          }
+        }
       }
     }
-    ctask ! new PingMsg(id)    
+    ctask ! new PingMsg(id)
   }
 }
 
 
-class Collector(n : int) extends Actor {
+class Collector(n: int) extends Actor {
   val nTasks = n
 
   def act(): unit = {
     for (val i <- 1 to nTasks) {
       receive {
-	case PingMsg(from) => {
-	  //System.out.println("Completed: " + from);
-	}
+        case PingMsg(from) => {
+          //System.out.println("Completed: " + from);
+        }
       }
     }
 

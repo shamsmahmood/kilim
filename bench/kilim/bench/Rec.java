@@ -6,23 +6,27 @@
 
 package kilim.bench;
 
-import kilim.*;
-    
+import kilim.Fiber;
+import kilim.NotPausable;
+import kilim.Pausable;
+import kilim.Task;
+
 public class Rec extends Task {
     static boolean pause = false;
     static boolean pausable = false;
-    public static void main(String[] args) throws  Exception {
+
+    public static void main(String[] args) throws Exception {
         int n = Integer.parseInt(args[0]);
         int d = Integer.parseInt(args[1]);
-        
+
         pausable = true;
-        
+
         pause = true;
-        testCont(new Rec(5,5));
+        testCont(new Rec(5, 5));
         long tpause = testCont(new Rec(n, d));
-        
+
         pause = false;
-        testCont(new Rec(5,5));
+        testCont(new Rec(5, 5));
         long tnopause = testCont(new Rec(n, d));
 
         pausable = false;
@@ -30,24 +34,26 @@ public class Rec extends Task {
         long tbase = testCont(new Rec(n, d));
         System.out.println(n + " " + tbase + " " + tnopause + " " + tpause);
     }
-    
+
     public static long testCont(Rec ex) throws NotPausable, Exception {
         long start = System.currentTimeMillis();
         if (pausable) {
             Fiber f = new Fiber(ex);
             while (true) {
                 ex.execute(f.begin());
-                if (f.end()) break;
+                if (f.end()) {
+                    break;
+                }
             }
         } else {
             ex.noPauseRun();
         }
         return (System.currentTimeMillis() - start);
     }
-    
-    
+
     int n;
     int depth;
+
     public Rec(int an, int aDepth) {
         n = an;
         depth = aDepth;
@@ -72,14 +78,14 @@ public class Rec extends Task {
             }
             return;
         }
-        rec(d-1, s);
+        rec(d - 1, s);
     }
 
     private void recNoPause(int d, String s) {
         if (d == 1) {
             return;
         }
-        recNoPause(d-1, s);
+        recNoPause(d - 1, s);
     }
 
 }

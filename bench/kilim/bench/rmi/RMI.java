@@ -5,9 +5,12 @@
  */
 
 package kilim.bench.rmi;
-import java.rmi.*;
+
+import java.rmi.Remote;
+import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Hashtable;
+
 public class RMI {
     public static void main(String[] args) throws Exception {
         int ntimes = args.length == 0 ? 1000 : Integer.parseInt(args[0]);
@@ -21,20 +24,20 @@ public class RMI {
 //            System.out.println("Sending hash " + System.identityHashCode(h));
             stub.ping(i);
         }
-        System.out.println("Elapsed (" + ntimes + " iters) : " + 
+        System.out.println("Elapsed (" + ntimes + " iters) : " +
                 (System.currentTimeMillis() - begin) + " millis");
     }
 }
 
 interface Ping extends Remote {
-//    void ping(Hashtable<String, String> h) throws RemoteException;
-  void ping(int i) throws RemoteException;
+    //    void ping(Hashtable<String, String> h) throws RemoteException;
+    void ping(int i) throws RemoteException;
 }
 
 class Server implements Ping {
     public void ping(int i) throws RemoteException {
 //        System.out.println(i);
     }
-    
+
 }
     

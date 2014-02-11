@@ -1,20 +1,24 @@
 package examples.actors
 
-import scala.actors.Actor
-import scala.actors.Actor._
 
 abstract class PingMessage
+
 case class MsgStart() extends PingMessage
+
 case class MsgPingInit(count: int, pong: Pong) extends PingMessage
+
 case class MsgSendPing extends PingMessage
+
 case class MsgPong(sender: Pong) extends PingMessage
 
 abstract class PongMessage
+
 case class MsgPing(sender: Ping) extends PongMessage
+
 case class MsgStop() extends PongMessage
 
 object PingPongBench {
-  def main(args : Array[String]): Unit = {
+  def main(args: Array[String]): Unit = {
     val ping = new Ping
     ping.start
     val pong = new Pong
@@ -27,34 +31,36 @@ object PingPongBench {
 
 class Ping extends Actor {
   var beginTime: long = 0;
+
   def act(): unit = {
     loop(0, null)
   }
+
   def loop(pingsLeft: int, pong: Pong): unit = {
     react {
       case MsgPingInit(count, pong) => {
         // System.out.println("Ping: Initializing with count:"+count+":"+pong)
-	beginTime = System.currentTimeMillis();
+        beginTime = System.currentTimeMillis();
         loop(count, pong)
       }
       case MsgStart() => {
-//        System.out.println("Ping: starting.")
+        //        System.out.println("Ping: starting.")
         pong ! MsgPing(this)
-        loop(pingsLeft-1, pong)
+        loop(pingsLeft - 1, pong)
       }
       case MsgSendPing() => {
         pong ! MsgPing(this)
-        loop(pingsLeft-1, pong)
+        loop(pingsLeft - 1, pong)
       }
       case MsgPong(pidS) => {
-//        if (pingsLeft % 100 == 0) {
-//          System.out.println("Ping: pong from: "+pidS)
-//        }
+        //        if (pingsLeft % 100 == 0) {
+        //          System.out.println("Ping: pong from: "+pidS)
+        //        }
         if (pingsLeft > 0)
           this ! MsgSendPing()
         else {
-//          System.out.println("Ping: Stop.")
-	  System.out.println("Elapsed: " + (System.currentTimeMillis() - beginTime));
+          //          System.out.println("Ping: Stop.")
+          System.out.println("Elapsed: " + (System.currentTimeMillis() - beginTime));
           pong ! MsgStop()
         }
         loop(pingsLeft, pong)
@@ -71,14 +77,14 @@ class Pong extends Actor {
   def loop(pongCount: int): unit = {
     react {
       case MsgPing(pidPing) => {
-//        if (pongCount % 100 == 0) {
-//          System.out.println("Pong: ping:"+pongCount+" from: "+pidPing)
-//        }
+        //        if (pongCount % 100 == 0) {
+        //          System.out.println("Pong: ping:"+pongCount+" from: "+pidPing)
+        //        }
         pidPing ! MsgPong(this)
-        loop(pongCount+1)
+        loop(pongCount + 1)
       }
       case MsgStop() => {
-//        System.out.println("Pong: Stop.")
+        //        System.out.println("Pong: Stop.")
         System.exit(0)
       }
     }
