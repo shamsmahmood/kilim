@@ -126,25 +126,10 @@ public class Weaver {
         }
     }
 
-    static void weaveClass(String name, Detector detector) {
-        try {
-            ClassWeaver cw = new ClassWeaver(name, detector);
-            writeClasses(cw);
-        } catch (KilimException ke) {
-            err = 1;
-            System.err.println("***** Error weaving " + name + ". " + ke.getMessage());
-            // ke.printStackTrace();
-
-        } catch (IOException ioe) {
-            err = 1;
-            System.err.println("***** Unable to find/process '" + name + "'\n" + ioe.getMessage());
-        }
-    }
-
     /**
      * public only for testing purposes
      */
-    public static void weaveClass2(String name, Detector detector) throws IOException {
+    public static void weaveClass(String name, Detector detector) throws IOException {
         try {
             ClassWeaver cw = new ClassWeaver(name, detector);
             cw.weave();

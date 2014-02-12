@@ -14,7 +14,7 @@ import kilim.tools.Weaver;
 public class TestInvalidPausables extends TestCase {
     private void ensureException(String className) {
         try {
-            Weaver.weaveClass2(className, Detector.DEFAULT);
+            Weaver.weaveClass(className, Detector.DEFAULT);
             fail("Expected weave exception while processing " + className);
         } catch (KilimException ke) {
         } catch (Exception e) {
