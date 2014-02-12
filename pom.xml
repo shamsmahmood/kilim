@@ -56,7 +56,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>1.3</version>
+                <version>1.8</version>
                 <executions>
                     <execution>
                         <id>add-jar</id>
@@ -67,7 +67,7 @@
                         <configuration>
                             <artifacts>
                                 <artifact>
-                                    <file>kilim.jar</file>
+                                    <file>kilim-weaver.jar</file>
                                     <type>jar</type>
                                 </artifact>
                             </artifacts>
